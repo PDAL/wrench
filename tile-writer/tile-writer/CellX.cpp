@@ -53,7 +53,7 @@ void Cell::advance()
 CellMgr::CellMgr(int pointSize, WriterX *writer) : m_pointSize(pointSize), m_writer(writer)
 {}
 
-Cell *CellMgr::get(const VoxelKeyX& key, const Cell *lastCell)
+Cell *CellMgr::get(const TileKey& key, const Cell *lastCell)
 {
     auto it = m_cells.find(key);
     if (it == m_cells.end())

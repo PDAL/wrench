@@ -38,7 +38,7 @@ class Cell
 public:
     using FlushFunc = std::function<void(Cell *)>;
 
-    Cell(const VoxelKeyX& key, int pointSize, WriterX *writer, CellMgr *mgr, const Cell *lastCell) :
+    Cell(const TileKey& key, int pointSize, WriterX *writer, CellMgr *mgr, const Cell *lastCell) :
         m_key(key), m_pointSize(pointSize), m_writer(writer), m_cellMgr(mgr)
     {
         assert(pointSize < BufSize);
@@ -52,7 +52,7 @@ public:
     void initialize(const Cell *exclude);
     Point point()
         { return Point(m_pos); }
-    VoxelKeyX key() const
+    TileKey key() const
         { return m_key; }
     void copyPoint(Point& b)
         { std::copy(b.data(), b.data() + m_pointSize, m_pos); }
@@ -60,7 +60,7 @@ public:
 
 private:
     DataVecPtr m_buf;
-    VoxelKeyX m_key;
+    TileKey m_key;
     uint8_t *m_pos;
     uint8_t *m_endPos;
     int m_pointSize;
@@ -76,10 +76,10 @@ class CellMgr
 public:
     CellMgr(int pointSize, WriterX *writer);
 
-    Cell *get(const VoxelKeyX& key, const Cell *lastCell = nullptr);
+    Cell *get(const TileKey& key, const Cell *lastCell = nullptr);
 
 private:
-    using CellMap = std::unordered_map<VoxelKeyX, std::unique_ptr<Cell>>;
+    using CellMap = std::unordered_map<TileKey, std::unique_ptr<Cell>>;
     int m_pointSize;
     WriterX *m_writer;
     CellMap m_cells;

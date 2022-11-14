@@ -62,7 +62,7 @@ class WriterX
 {
     struct WriteData
     {
-        VoxelKeyX key;
+        TileKey key;
         DataVecPtr data;
         size_t dataSize;
     };
@@ -71,7 +71,7 @@ public:
     WriterX(const std::string& directory, int numThreads, size_t pointSize);
 
     void replace(DataVecPtr data);
-    void enqueue(const VoxelKeyX& key, DataVecPtr data, size_t dataSize);
+    void enqueue(const TileKey& key, DataVecPtr data, size_t dataSize);
     void stop();
     const Totals& totals()
         { return m_totals; }
@@ -80,7 +80,7 @@ public:
     DataVecPtr fetchBufferBlocking();
 
 private:
-    std::string path(const VoxelKeyX& key);
+    std::string path(const TileKey& key);
     void run();
 
     std::string m_directory;
@@ -89,7 +89,7 @@ private:
     bool m_stop;
     size_t m_pointSize;
     std::list<WriteData> m_queue;
-    std::list<VoxelKeyX> m_active;
+    std::list<TileKey> m_active;
     Totals m_totals;
     std::mutex m_mutex;
     std::condition_variable m_available;

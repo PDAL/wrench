@@ -9,12 +9,27 @@ find_package(PDAL REQUIRED)
 
 add_executable(tile-writer
     main.cpp
-    GridX.cpp
-    WriterX.cpp
-    ThreadPoolX.cpp
+
     BufferCacheX.cpp
-    FileProcessorX.cpp
     CellX.cpp
+    FileProcessorX.cpp
+    GridX.cpp
+    LasX.cpp
+    ThreadPoolX.cpp
+    WriterX.cpp
+
+    BufferCacheX.hpp
+    CellX.hpp
+    CommonX.hpp
+    EpfTypesX.hpp
+    FileDimInfoX.hpp
+    FileProcessorX.hpp
+    GridX.hpp
+    LasX.hpp
+    PointX.hpp
+    ThreadPoolX.hpp
+    VoxelKeyX.hpp
+    WriterX.hpp
 )
 
 target_include_directories(tile-writer

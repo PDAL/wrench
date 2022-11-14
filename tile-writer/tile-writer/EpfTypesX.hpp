@@ -32,7 +32,7 @@ namespace epf
 
 using DataVec = std::vector<uint8_t>;
 using DataVecPtr = std::unique_ptr<DataVec>;
-using Totals = std::unordered_map<VoxelKeyX, size_t>;
+using Totals = std::unordered_map<TileKey, size_t>;
 constexpr int MaxPointsPerNode = 100000;
 constexpr int BufSize = 4096 * 10;
 constexpr int MaxBuffers = 1000;

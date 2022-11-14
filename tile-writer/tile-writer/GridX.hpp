@@ -23,16 +23,14 @@ namespace untwine
 namespace epf
 {
 
-class GridX
+class TileGrid
 {
 public:
-    GridX() : m_gridSize(-1), m_maxLevel(-1), m_millionPoints(0), m_cubic(true)
+    TileGrid() : m_millionPoints(0), m_cubic(true)
     {}
 
     void expand(const pdal::BOX3D& bounds, size_t points);
-    int calcLevel();
-    void resetLevel(int level);
-    VoxelKeyX key(double x, double y, double z) const;
+    TileKey key(double x, double y, double z) const;
     pdal::BOX3D processingBounds() const
         { return m_cubic ? m_cubicBounds : m_bounds; }
     pdal::BOX3D cubicBounds() const
@@ -40,14 +38,13 @@ public:
     pdal::BOX3D conformingBounds() const
         { return m_bounds; }
 
-    int maxLevel() const
-        { return m_maxLevel; }
     void setCubic(bool cubic)
         { m_cubic = cubic; }
 
 private:
-    int m_gridSize;
-    int m_maxLevel;
+    double m_tileLength = 100;
+    int m_gridSizeX = 0, m_gridSizeY = 0;
+
     pdal::BOX3D m_bounds;
     pdal::BOX3D m_cubicBounds;
     size_t m_millionPoints;

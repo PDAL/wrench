@@ -35,7 +35,7 @@ WriterX::WriterX(const std::string& directory, int numThreads, size_t pointSize)
         m_pool.add(f);
 }
 
-std::string WriterX::path(const VoxelKeyX& key)
+std::string WriterX::path(const TileKey& key)
 {
     return m_directory + "/" + key.toString() + ".bin";
 }
@@ -68,7 +68,7 @@ DataVecPtr WriterX::fetchBufferBlocking()
 }
 
 
-void WriterX::enqueue(const VoxelKeyX& key, DataVecPtr data, size_t dataSize)
+void WriterX::enqueue(const TileKey& key, DataVecPtr data, size_t dataSize)
 {
     {
         std::lock_guard<std::mutex> lock(m_mutex);

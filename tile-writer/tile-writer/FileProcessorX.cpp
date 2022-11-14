@@ -24,7 +24,7 @@ namespace untwine
 namespace epf
 {
 
-FileProcessorX::FileProcessorX(const FileInfoX& fi, size_t pointSize, const GridX& grid,
+FileProcessorX::FileProcessorX(const FileInfoX& fi, size_t pointSize, const TileGrid& grid,
         WriterX *writer/*, ProgressWriter& progress*/) :
     m_fi(fi), m_cellMgr(pointSize, writer), m_grid(grid) //, m_progress(progress)
 {}
@@ -53,7 +53,7 @@ void FileProcessorX::run()
 
     // This is some random cell that ultimately won't get used, but it contains a buffer
     // into which we can write data.
-    Cell *cell = m_cellMgr.get(VoxelKeyX());
+    Cell *cell = m_cellMgr.get(TileKey());
 
     pdal::StreamCallbackFilter f;
     f.setCallback([this, &count, &countTotal, &cell](pdal::PointRef& point)
@@ -67,7 +67,7 @@ void FileProcessorX::run()
 
             // Find the actual cell that this point belongs in. If it's not the one
             // we chose, copy the data to the correct cell.
-            VoxelKeyX cellIndex = m_grid.key(p.x(), p.y(), p.z());
+            TileKey cellIndex = m_grid.key(p.x(), p.y(), p.z());
             if (cellIndex != cell->key())
             {
                 // Make sure that we exclude the current cell from any potential flush so

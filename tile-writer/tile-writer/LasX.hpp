@@ -1,5 +1,5 @@
 /*****************************************************************************
- *   Copyright (c) 2020, Hobu, Inc. (info@hobu.co)                           *
+ *   Copyright (c) 2021, Hobu, Inc. (info@hobu.co)                           *
  *                                                                           *
  *   All rights reserved.                                                    *
  *                                                                           *
@@ -10,37 +10,12 @@
  *                                                                           *
  ****************************************************************************/
 
-
-#include "EpfTypesX.hpp"
-#include "GridX.hpp"
-#include "CellX.hpp"
+#include <pdal/Dimension.hpp>
 
 namespace untwine
 {
 
-class ProgressWriter;
+const pdal::Dimension::IdList& pdrfDims(int pdrf);
+const pdal::Dimension::IdList& extentDims(int pdrf);
 
-namespace epf
-{
-
-class WriterX;
-
-// Processes a single input file (FileInfo) and writes data to the Writer.
-class FileProcessorX
-{
-public:
-    FileProcessorX(const FileInfoX& fi, size_t pointSize, const TileGrid& grid, WriterX *writer/*,
-        ProgressWriter& progress*/);
-
-    Cell *getCell(const TileKey& key);
-    void run();
-
-private:
-    FileInfoX m_fi;
-    CellMgr m_cellMgr;
-    TileGrid m_grid;
-    //ProgressWriter& m_progress;
-};
-
-} // namespace epf
 } // namespace untwine
