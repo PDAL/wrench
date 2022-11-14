@@ -11,8 +11,8 @@
  ****************************************************************************/
 
 
-#include "CellX.hpp"
-#include "WriterX.hpp"
+#include "Cell.hpp"
+#include "Writer.hpp"
 
 namespace untwine
 {
@@ -50,7 +50,7 @@ void Cell::advance()
 /// CellMgr
 ///
 
-CellMgr::CellMgr(int pointSize, WriterX *writer) : m_pointSize(pointSize), m_writer(writer)
+CellMgr::CellMgr(int pointSize, Writer *writer) : m_pointSize(pointSize), m_writer(writer)
 {}
 
 Cell *CellMgr::get(const TileKey& key, const Cell *lastCell)

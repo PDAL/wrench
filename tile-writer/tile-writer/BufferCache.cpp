@@ -13,7 +13,7 @@
 
 #include <mutex>
 
-#include "BufferCacheX.hpp"
+#include "BufferCache.hpp"
 
 namespace untwine
 {

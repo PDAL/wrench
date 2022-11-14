@@ -17,12 +17,12 @@
 namespace untwine
 {
 
-struct FileDimInfoX
+struct FileDimInfo
 {
-    FileDimInfoX()
+    FileDimInfo()
     {}
 
-    FileDimInfoX(const std::string& name) : name(name), extraDim(false)
+    FileDimInfo(const std::string& name) : name(name), extraDim(false)
     {}
 
     std::string name;
@@ -32,15 +32,15 @@ struct FileDimInfoX
     bool extraDim;
 };
 
-using DimInfoListX = std::vector<FileDimInfoX>;
+using DimInfoList = std::vector<FileDimInfo>;
 
-inline std::ostream& operator<<(std::ostream& out, const FileDimInfoX& fdi)
+inline std::ostream& operator<<(std::ostream& out, const FileDimInfo& fdi)
 {
     out << fdi.name << " " << (int)fdi.type << " " << fdi.offset;
     return out;
 }
 
-inline std::istream& operator>>(std::istream& in, FileDimInfoX& fdi)
+inline std::istream& operator>>(std::istream& in, FileDimInfo& fdi)
 {
     int type;
     in >> fdi.name >> type >> fdi.offset;

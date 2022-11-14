@@ -15,10 +15,9 @@
 
 #include <pdal/util/FileUtils.hpp>
 
-#include "WriterX.hpp"
-//#include "Epf.hpp"
-#include "CommonX.hpp"
-#include "VoxelKeyX.hpp"
+#include "Writer.hpp"
+#include "Common.hpp"
+#include "TileKey.hpp"
 
 using namespace pdal;
 
@@ -27,20 +26,20 @@ namespace untwine
 namespace epf
 {
 
-WriterX::WriterX(const std::string& directory, int numThreads, size_t pointSize) :
+Writer::Writer(const std::string& directory, int numThreads, size_t pointSize) :
     m_directory(directory), m_pool(numThreads), m_stop(false), m_pointSize(pointSize)
 {
-    std::function<void()> f = std::bind(&WriterX::run, this);
+    std::function<void()> f = std::bind(&Writer::run, this);
     while (numThreads--)
         m_pool.add(f);
 }
 
-std::string WriterX::path(const TileKey& key)
+std::string Writer::path(const TileKey& key)
 {
     return m_directory + "/" + key.toString() + ".bin";
 }
 
-Totals WriterX::totals(size_t minSize)
+Totals Writer::totals(size_t minSize)
 {
     Totals t;
 
@@ -50,7 +49,7 @@ Totals WriterX::totals(size_t minSize)
     return t;
 }
 
-DataVecPtr WriterX::fetchBuffer()
+DataVecPtr Writer::fetchBuffer()
 {
     std::unique_lock<std::mutex> lock(m_mutex);
 
@@ -60,7 +59,7 @@ DataVecPtr WriterX::fetchBuffer()
 }
 
 
-DataVecPtr WriterX::fetchBufferBlocking()
+DataVecPtr Writer::fetchBufferBlocking()
 {
     std::unique_lock<std::mutex> lock(m_mutex);
 
@@ -68,7 +67,7 @@ DataVecPtr WriterX::fetchBufferBlocking()
 }
 
 
-void WriterX::enqueue(const TileKey& key, DataVecPtr data, size_t dataSize)
+void Writer::enqueue(const TileKey& key, DataVecPtr data, size_t dataSize)
 {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
@@ -78,13 +77,13 @@ void WriterX::enqueue(const TileKey& key, DataVecPtr data, size_t dataSize)
     m_available.notify_one();
 }
 
-void WriterX::replace(DataVecPtr data)
+void Writer::replace(DataVecPtr data)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_bufferCache.replace(std::move(data));
 }
 
-void WriterX::stop()
+void Writer::stop()
 {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
@@ -94,10 +93,10 @@ void WriterX::stop()
     m_pool.join();
     std::vector<std::string> errors = m_pool.clearErrors();
     if (errors.size())
-        throw FatalErrorX(errors.front());
+        throw FatalError(errors.front());
 }
 
-void WriterX::run()
+void Writer::run()
 {
     while (true)
     {
@@ -141,7 +140,7 @@ void WriterX::run()
         out.write(reinterpret_cast<const char *>(wd.data->data()), wd.dataSize);
         out.close();
         if (!out)
-            throw FatalErrorX("Failure writing to '" + path(wd.key) + "'.");
+            throw FatalError("Failure writing to '" + path(wd.key) + "'.");
 
         std::lock_guard<std::mutex> lock(m_mutex);
         m_bufferCache.replace(std::move(wd.data));

@@ -11,49 +11,35 @@
  ****************************************************************************/
 
 
-#pragma once
-
-#include <pdal/Dimension.hpp>
-#include <pdal/SpatialReference.hpp>
-#include <pdal/util/Bounds.hpp>
-
-#include <cstdint>
-#include <memory>
-#include <unordered_map>
-#include <vector>
-
-#include "FileDimInfoX.hpp"
-#include "VoxelKeyX.hpp"
+#include "EpfTypes.hpp"
+#include "TileGrid.hpp"
+#include "Cell.hpp"
 
 namespace untwine
 {
+
+class ProgressWriter;
+
 namespace epf
 {
 
-using DataVec = std::vector<uint8_t>;
-using DataVecPtr = std::unique_ptr<DataVec>;
-using Totals = std::unordered_map<TileKey, size_t>;
-constexpr int MaxPointsPerNode = 100000;
-constexpr int BufSize = 4096 * 10;
-constexpr int MaxBuffers = 1000;
-constexpr int NumWriters = 4;
-constexpr int NumFileProcessors = 8;
+class Writer;
 
-struct FileInfoX
+// Processes a single input file (FileInfo) and writes data to the Writer.
+class FileProcessor
 {
-    FileInfoX() : numPoints(0), start(0)
-    {}
+public:
+    FileProcessor(const FileInfo& fi, size_t pointSize, const TileGrid& grid, Writer *writer/*,
+        ProgressWriter& progress*/);
 
-    std::string filename;
-    std::string driver;
-    DimInfoListX dimInfo;
-    uint64_t numPoints;
-    uint64_t start;
-    pdal::BOX3D bounds;
-    pdal::SpatialReference srs;
+    Cell *getCell(const TileKey& key);
+    void run();
 
-    bool valid() const
-    { return filename.size(); }
+private:
+    FileInfo m_fi;
+    CellMgr m_cellMgr;
+    TileGrid m_grid;
+    //ProgressWriter& m_progress;
 };
 
 } // namespace epf

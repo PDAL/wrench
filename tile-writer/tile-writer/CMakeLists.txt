@@ -10,26 +10,26 @@ find_package(PDAL REQUIRED)
 add_executable(tile-writer
     main.cpp
 
-    BufferCacheX.cpp
-    CellX.cpp
-    FileProcessorX.cpp
-    GridX.cpp
-    LasX.cpp
-    ThreadPoolX.cpp
-    WriterX.cpp
+    BufferCache.cpp
+    Cell.cpp
+    FileProcessor.cpp
+    Las.cpp
+    TileGrid.cpp
+    ThreadPool.cpp
+    Writer.cpp
 
-    BufferCacheX.hpp
-    CellX.hpp
-    CommonX.hpp
-    EpfTypesX.hpp
-    FileDimInfoX.hpp
-    FileProcessorX.hpp
-    GridX.hpp
-    LasX.hpp
-    PointX.hpp
-    ThreadPoolX.hpp
-    VoxelKeyX.hpp
-    WriterX.hpp
+    BufferCache.hpp
+    Cell.hpp
+    Common.hpp
+    EpfTypes.hpp
+    FileDimInfo.hpp
+    FileProcessor.hpp
+    Las.hpp
+    Point.hpp
+    TileGrid.hpp
+    TileKey.hpp
+    ThreadPool.hpp
+    Writer.hpp
 )
 
 target_include_directories(tile-writer

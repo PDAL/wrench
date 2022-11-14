@@ -5,10 +5,10 @@
 
 using PointCount = uint64_t;
 
-class  FatalErrorX : public std::runtime_error
+class  FatalError : public std::runtime_error
 {
 public:
-    inline FatalErrorX(std::string const& msg) : std::runtime_error(msg)
+    inline FatalError(std::string const& msg) : std::runtime_error(msg)
         {}
 };
 

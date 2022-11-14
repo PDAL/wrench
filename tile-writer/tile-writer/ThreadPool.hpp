@@ -45,14 +45,14 @@
 namespace untwine
 {
 
-class ThreadPoolX
+class ThreadPool
 {
 public:
     // After numThreads tasks are actively running, and queueSize tasks have
     // been enqueued to wait for an available worker thread, subsequent calls
     // to Pool::add will block until an enqueued task has been popped from the
     // queue.
-    ThreadPoolX(std::size_t numThreads, int64_t queueSize = -1,
+    ThreadPool(std::size_t numThreads, int64_t queueSize = -1,
             bool verbose = false) :
         m_queueSize(queueSize),
         m_numThreads(std::max<std::size_t>(numThreads, 1)), m_verbose(verbose)
@@ -61,11 +61,11 @@ public:
         go();
     }
 
-    ~ThreadPoolX()
+    ~ThreadPool()
     { join(); }
 
-    ThreadPoolX(const ThreadPoolX& other) = delete;
-    ThreadPoolX& operator=(const ThreadPoolX& other) = delete;
+    ThreadPool(const ThreadPool& other) = delete;
+    ThreadPool& operator=(const ThreadPool& other) = delete;
 
     // Start worker threads.
     void go();

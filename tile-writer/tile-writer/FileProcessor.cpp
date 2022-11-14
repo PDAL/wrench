@@ -11,8 +11,8 @@
  ****************************************************************************/
 
 
-#include "FileProcessorX.hpp"
-#include "CommonX.hpp"
+#include "FileProcessor.hpp"
+#include "Common.hpp"
 //#include "../untwine/ProgressWriter.hpp"
 
 #include <pdal/pdal_features.hpp>
@@ -24,12 +24,12 @@ namespace untwine
 namespace epf
 {
 
-FileProcessorX::FileProcessorX(const FileInfoX& fi, size_t pointSize, const TileGrid& grid,
-        WriterX *writer/*, ProgressWriter& progress*/) :
+FileProcessor::FileProcessor(const FileInfo& fi, size_t pointSize, const TileGrid& grid,
+        Writer *writer/*, ProgressWriter& progress*/) :
     m_fi(fi), m_cellMgr(pointSize, writer), m_grid(grid) //, m_progress(progress)
 {}
 
-void FileProcessorX::run()
+void FileProcessor::run()
 {
     pdal::Options opts;
     opts.add("filename", m_fi.filename);
@@ -61,7 +61,7 @@ void FileProcessorX::run()
             // Write the data into the point buffer in the cell.  This is the *last*
             // cell buffer that we used. We're hoping that it's the right one.
             Point p = cell->point();
-            for (const FileDimInfoX& fdi : m_fi.dimInfo)
+            for (const FileDimInfo& fdi : m_fi.dimInfo)
                 point.getField(reinterpret_cast<char *>(p.data() + fdi.offset),
                     fdi.dim, fdi.type);
 
@@ -105,7 +105,7 @@ void FileProcessorX::run()
     }
     catch (const pdal::pdal_error& err)
     {
-        throw FatalErrorX(err.what());
+        throw FatalError(err.what());
     }
 
     // We normally call update for every CountIncrement points, but at the end, just

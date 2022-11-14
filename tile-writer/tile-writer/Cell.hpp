@@ -18,16 +18,16 @@
 #include <unordered_map>
 #include <memory>
 
-#include "EpfTypesX.hpp"
-#include "PointX.hpp"
-#include "VoxelKeyX.hpp"
+#include "EpfTypes.hpp"
+#include "Point.hpp"
+#include "TileKey.hpp"
 
 namespace untwine
 {
 namespace epf
 {
 
-class WriterX;
+class Writer;
 class CellMgr;
 
 // A cell represents a voxel that contains points. All cells are the same size. A cell has
@@ -38,7 +38,7 @@ class Cell
 public:
     using FlushFunc = std::function<void(Cell *)>;
 
-    Cell(const TileKey& key, int pointSize, WriterX *writer, CellMgr *mgr, const Cell *lastCell) :
+    Cell(const TileKey& key, int pointSize, Writer *writer, CellMgr *mgr, const Cell *lastCell) :
         m_key(key), m_pointSize(pointSize), m_writer(writer), m_cellMgr(mgr)
     {
         assert(pointSize < BufSize);
@@ -64,7 +64,7 @@ private:
     uint8_t *m_pos;
     uint8_t *m_endPos;
     int m_pointSize;
-    WriterX *m_writer;
+    Writer *m_writer;
     CellMgr *m_cellMgr;
 
     void write();
@@ -74,14 +74,14 @@ class CellMgr
 {
     friend class Cell;
 public:
-    CellMgr(int pointSize, WriterX *writer);
+    CellMgr(int pointSize, Writer *writer);
 
     Cell *get(const TileKey& key, const Cell *lastCell = nullptr);
 
 private:
     using CellMap = std::unordered_map<TileKey, std::unique_ptr<Cell>>;
     int m_pointSize;
-    WriterX *m_writer;
+    Writer *m_writer;
     CellMap m_cells;
 
     DataVecPtr getBuffer(const Cell* exclude);

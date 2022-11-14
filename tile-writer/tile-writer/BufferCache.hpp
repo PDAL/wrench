@@ -17,7 +17,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "EpfTypesX.hpp"
+#include "EpfTypes.hpp"
 
 namespace untwine
 {

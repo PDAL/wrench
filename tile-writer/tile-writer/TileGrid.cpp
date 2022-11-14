@@ -14,7 +14,7 @@
 #include <cmath>
 #include <cstdint>
 
-#include "GridX.hpp"
+#include "TileGrid.hpp"
 
 using namespace pdal;
 

@@ -18,10 +18,10 @@
 #include <mutex>
 #include <string>
 
-#include "EpfTypesX.hpp"
-#include "BufferCacheX.hpp"
-#include "ThreadPoolX.hpp"
-#include "VoxelKeyX.hpp"
+#include "EpfTypes.hpp"
+#include "BufferCache.hpp"
+#include "ThreadPool.hpp"
+#include "TileKey.hpp"
 
 namespace untwine
 {
@@ -58,7 +58,7 @@ namespace epf
 // destined for that cell - we don't want to tear down the cell just to recreate it.
 // The thinking is that if we've filled a buffer for a cell, there's
 // probably at least one more point going to that cell from the source.
-class WriterX
+class Writer
 {
     struct WriteData
     {
@@ -68,7 +68,7 @@ class WriterX
     };
 
 public:
-    WriterX(const std::string& directory, int numThreads, size_t pointSize);
+    Writer(const std::string& directory, int numThreads, size_t pointSize);
 
     void replace(DataVecPtr data);
     void enqueue(const TileKey& key, DataVecPtr data, size_t dataSize);
@@ -84,7 +84,7 @@ private:
     void run();
 
     std::string m_directory;
-    ThreadPoolX m_pool;
+    ThreadPool m_pool;
     BufferCache m_bufferCache;
     bool m_stop;
     size_t m_pointSize;

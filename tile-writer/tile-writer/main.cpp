@@ -21,13 +21,13 @@
 #include <pdal/StageFactory.hpp>
 #include <pdal/io/BufferReader.hpp>
 
-#include "CommonX.hpp"
-#include "GridX.hpp"
-#include "FileDimInfoX.hpp"
-#include "EpfTypesX.hpp"
-#include "WriterX.hpp"
-#include "FileProcessorX.hpp"
-#include "LasX.hpp"
+#include "Common.hpp"
+#include "TileGrid.hpp"
+#include "FileDimInfo.hpp"
+#include "EpfTypes.hpp"
+#include "Writer.hpp"
+#include "FileProcessor.hpp"
+#include "Las.hpp"
 
 using namespace std;
 
@@ -64,7 +64,7 @@ public:
     pdal::BOX3D trueBounds;
     size_t pointSize;
     std::string outputFile;
-    untwine::DimInfoListX dimInfo;
+    untwine::DimInfoList dimInfo;
     pdal::SpatialReference srs;
     int pointFormatId;
 
@@ -106,11 +106,11 @@ using namespace pdal;
 
 
 static PointCount createFileInfo(const StringList& input, StringList dimNames,
-    std::vector<FileInfoX>& fileInfos, BaseInfo &m_b, TileGrid &m_grid, FileInfoX &m_srsFileInfo)
+    std::vector<FileInfo>& fileInfos, BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo)
 {
     using namespace pdal;
 
-    std::vector<FileInfoX> tempFileInfos;
+    std::vector<FileInfo> tempFileInfos;
     std::vector<std::string> filenames;
     PointCount totalPoints = 0;
 
@@ -150,7 +150,7 @@ static PointCount createFileInfo(const StringList& input, StringList dimNames,
         StageFactory factory;
         std::string driver = factory.inferReaderDriver(filename);
         if (driver.empty())
-            throw FatalErrorX("Can't infer reader for '" + filename + "'.");
+            throw FatalError("Can't infer reader for '" + filename + "'.");
         Stage *s = factory.createStage(driver);
         pdal::Options opts;
         opts.add("filename", filename);
@@ -159,7 +159,7 @@ static PointCount createFileInfo(const StringList& input, StringList dimNames,
         QuickInfo qi = s->preview();
 
         if (!qi.valid())
-            throw FatalErrorX("Couldn't get quick info for '" + filename + "'.");
+            throw FatalError("Couldn't get quick info for '" + filename + "'.");
 
         // Get scale values from the reader if they exist.
         pdal::MetadataNode root = s->getMetadata();
@@ -182,7 +182,7 @@ static PointCount createFileInfo(const StringList& input, StringList dimNames,
         if (m.valid())
             zOffsets.push_back(m.value<double>());
 
-        FileInfoX fi;
+        FileInfo fi;
         fi.bounds = qi.m_bounds;
         fi.numPoints = qi.m_pointCount;
         fi.filename = filename;
@@ -192,7 +192,7 @@ static PointCount createFileInfo(const StringList& input, StringList dimNames,
         // of desired dimensions.
         for (const std::string& name : qi.m_dimNames)
             if (dimNames.empty() || Utils::contains(dimNames, Utils::toupper(name)))
-                fi.dimInfo.push_back(untwine::FileDimInfoX(name));
+                fi.dimInfo.push_back(untwine::FileDimInfo(name));
 
         if (m_srsFileInfo.valid() && m_srsFileInfo.srs != qi.m_srs)
             std::cerr << "Files have mismatched SRS values. Using SRS from '" <<
@@ -226,7 +226,7 @@ static PointCount createFileInfo(const StringList& input, StringList dimNames,
     // If we have LAS start capability, break apart file infos into chunks of size 5 million.
 #ifdef PDAL_LAS_START
     PointCount ChunkSize = 5'000'000;
-    for (const FileInfoX& fi : tempFileInfos)
+    for (const FileInfo& fi : tempFileInfos)
     {
         if (fi.driver != "readers.las" || fi.numPoints < ChunkSize)
         {
@@ -237,7 +237,7 @@ static PointCount createFileInfo(const StringList& input, StringList dimNames,
         pdal::PointId start = 0;
         while (remaining)
         {
-            FileInfoX lasFi(fi);
+            FileInfo lasFi(fi);
             lasFi.numPoints = (std::min)(ChunkSize, remaining);
             lasFi.start = start;
             fileInfos.push_back(lasFi);
@@ -256,7 +256,7 @@ static PointCount createFileInfo(const StringList& input, StringList dimNames,
 
 
 
-static void fillMetadata(const pdal::PointLayoutPtr layout, BaseInfo &m_b, const TileGrid &m_grid, FileInfoX &m_srsFileInfo)
+static void fillMetadata(const pdal::PointLayoutPtr layout, BaseInfo &m_b, const TileGrid &m_grid, FileInfo &m_srsFileInfo)
 {
     using namespace pdal;
 
@@ -280,7 +280,7 @@ static void fillMetadata(const pdal::PointLayoutPtr layout, BaseInfo &m_b, const
     const Dimension::IdList& lasDims = untwine::pdrfDims(m_b.pointFormatId);
     for (Dimension::Id id : layout->dims())
     {
-        untwine::FileDimInfoX di;
+        untwine::FileDimInfo di;
         di.name = layout->dimName(id);
         di.type = layout->dimType(id);
         di.offset = layout->dimOffset(id);
@@ -390,9 +390,9 @@ int main()
   // originally member vars
   untwine::epf::TileGrid m_grid;
   BaseInfo m_b;
-  FileInfoX m_srsFileInfo;
-  std::unique_ptr<WriterX> m_writer;
-  untwine::ThreadPoolX m_pool(8);
+  FileInfo m_srsFileInfo;
+  std::unique_ptr<Writer> m_writer;
+  untwine::ThreadPool m_pool(8);
 
   m_b.opts.fileLimit = 10000000;
   m_b.opts.tempDir = "/tmp/epf";
@@ -401,14 +401,14 @@ int main()
   BOX3D totalBounds;
 
   if (pdal::FileUtils::fileExists(m_b.opts.tempDir + "/" + MetadataFilename))
-    throw FatalErrorX("Output directory already contains EPT data.");
+    throw FatalError("Output directory already contains EPT data.");
 
   m_grid.setCubic(m_b.opts.doCube);
 
   // Create the file infos. As each info is created, the N x N x N grid is expanded to
   // hold all the points. If the number of points seems too large, N is expanded to N + 1.
   // The correct N is often wrong, especially for some areas where things are more dense.
-  std::vector<untwine::epf::FileInfoX> fileInfos;
+  std::vector<untwine::epf::FileInfo> fileInfos;
   point_count_t totalPoints = createFileInfo(m_b.opts.inputFiles, m_b.opts.dimNames, fileInfos, m_b, m_grid, m_srsFileInfo);
 
   //if (m_b.opts.level != -1)
@@ -420,8 +420,8 @@ int main()
 
   // Stick all the dimension names from each input file in a set.
   std::unordered_set<std::string> allDimNames;
-  for (const FileInfoX& fi : fileInfos)
-      for (const untwine::FileDimInfoX& fdi : fi.dimInfo)
+  for (const FileInfo& fi : fileInfos)
+      for (const untwine::FileDimInfo& fdi : fi.dimInfo)
           allDimNames.insert(fdi.name);
 
   // Register the dimensions, either as the default type or double if we don't know
@@ -443,9 +443,9 @@ int main()
   layout->finalize();
 
   // Fill in dim info now that the layout is finalized.
-  for (FileInfoX& fi : fileInfos)
+  for (FileInfo& fi : fileInfos)
   {
-      for (untwine::FileDimInfoX& di : fi.dimInfo)
+      for (untwine::FileDimInfo& di : fi.dimInfo)
       {
           di.dim = layout->findDim(di.name);
           di.type = layout->dimType(di.dim);
@@ -454,23 +454,23 @@ int main()
   }
 #if 1   // TODO: only temporarily disabled to test writing of output
   // Make a writer with NumWriters threads.
-  m_writer.reset(new WriterX(m_b.opts.tempDir, NumWriters, layout->pointSize()));
+  m_writer.reset(new Writer(m_b.opts.tempDir, NumWriters, layout->pointSize()));
 
   // Sort file infos so the largest files come first. This helps to make sure we don't delay
   // processing big files that take the longest (use threads more efficiently).
-  std::sort(fileInfos.begin(), fileInfos.end(), [](const FileInfoX& f1, const FileInfoX& f2)
+  std::sort(fileInfos.begin(), fileInfos.end(), [](const FileInfo& f1, const FileInfo& f2)
       { return f1.numPoints > f2.numPoints; });
 
   //progress.setPointIncrementer(totalPoints, 40);
 
   // Add the files to the processing pool
   m_pool.trap(true, "Unknown error in FileProcessor");
-  for (const FileInfoX& fi : fileInfos)
+  for (const FileInfo& fi : fileInfos)
   {
       int pointSize = layout->pointSize();
       m_pool.add([&fi, /*&progress,*/ pointSize, &m_grid, &m_writer]()
       {
-          untwine::epf::FileProcessorX fp(fi, pointSize, m_grid, m_writer.get() /*, progress*/);
+          untwine::epf::FileProcessor fp(fi, pointSize, m_grid, m_writer.get() /*, progress*/);
           fp.run();
       });
   }
@@ -484,7 +484,7 @@ int main()
   // If the FileProcessors had an error, throw.
   std::vector<std::string> errors = m_pool.clearErrors();
   if (errors.size())
-      throw FatalErrorX(errors.front());
+      throw FatalError(errors.front());
 
 
   //cout << "Hello World!  " << totalPoints << " " << fileInfos.size() << endl;
@@ -495,7 +495,7 @@ int main()
 
   //---------
 
-  untwine::ThreadPoolX m_pool2(8);
+  untwine::ThreadPool m_pool2(8);
 
   std::vector<std::string> lstBinFiles = directoryList("/tmp/epf");
   std::string finalDir = "/tmp/epf-tiles";
@@ -518,9 +518,9 @@ int main()
           // layout.
 
           Dimension::IdList lasDims = untwine::pdrfDims(m_b.pointFormatId);
-          untwine::DimInfoListX dims = m_b.dimInfo;
+          untwine::DimInfoList dims = m_b.dimInfo;
           // TODO m_extraDims.clear();
-          for (untwine::FileDimInfoX& fdi : dims)
+          for (untwine::FileDimInfo& fdi : dims)
           {
               fdi.dim = table.layout()->registerOrAssignDim(fdi.name, fdi.type);
               // TODO
@@ -548,7 +548,7 @@ int main()
           for ( int i = 0; i < ptCnt; ++i )
           {
               char *base = contentPtr + i * m_b.pointSize;
-              for (const untwine::FileDimInfoX& fdi : dims)
+              for (const untwine::FileDimInfo& fdi : dims)
                   view->setField(fdi.dim, fdi.type, pointId,
                       reinterpret_cast<void *>(base + fdi.offset));
               pointId++;

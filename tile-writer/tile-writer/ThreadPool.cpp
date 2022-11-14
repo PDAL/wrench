@@ -32,14 +32,14 @@
  * OF SUCH DAMAGE.
  ****************************************************************************/
 
-#include "ThreadPoolX.hpp"
+#include "ThreadPool.hpp"
 
 #include <iostream>
 
 namespace untwine
 {
 
-void ThreadPoolX::go()
+void ThreadPool::go()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (m_running)
@@ -53,7 +53,7 @@ void ThreadPoolX::go()
     }
 }
 
-void ThreadPoolX::work()
+void ThreadPool::work()
 {
     while (true)
     {
