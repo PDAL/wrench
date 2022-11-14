@@ -28,17 +28,10 @@ void TileGrid::expand(const BOX3D& bounds, size_t points)
     m_bounds.grow(bounds);
     double xside = m_bounds.maxx - m_bounds.minx;
     double yside = m_bounds.maxy - m_bounds.miny;
-    double zside = m_bounds.maxz - m_bounds.minz;
-    double side = (std::max)(xside, (std::max)(yside, zside));
-    m_cubicBounds = BOX3D(m_bounds.minx, m_bounds.miny, m_bounds.minz,
-        m_bounds.minx + side, m_bounds.miny + side, m_bounds.minz + side);
     m_millionPoints += size_t(points / 1000000.0);
 
-
-    std::cout << "EXPAND:" << m_bounds.toBox(1);
     m_gridSizeX = std::ceil(xside / m_tileLength);
     m_gridSizeY = std::ceil(yside / m_tileLength);
-    std::cout << "grid size " << m_gridSizeX << " " << m_gridSizeY << std::endl;
 }
 
 

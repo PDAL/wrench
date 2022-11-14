@@ -11,7 +11,7 @@
  ****************************************************************************/
 
 #include <iostream>
-
+#include <filesystem>
 #include <unordered_set>
 
 #include <pdal/pdal_features.hpp>
@@ -29,54 +29,11 @@
 #include "FileProcessor.hpp"
 #include "Las.hpp"
 
-using namespace std;
 
-const std::string MetadataFilename {"info2.txt"};
+// PDAL's directoryList had a bug, so we've imported a working
+// version here so that we can still use older PDAL releases.
 
-using StringList = std::vector<std::string>;
-
-struct OptionsX
-{
-    std::string outputName;
-    bool singleFile;
-    StringList inputFiles;
-    std::string tempDir;
-    bool preserveTempDir;
-    bool doCube;
-    size_t fileLimit;
-    int level;
-    int progressFd;
-    bool progressDebug;
-    StringList dimNames;
-    bool stats;
-    std::string a_srs;
-    bool metadata;
-};
-
-struct BaseInfo
-{
-public:
-    BaseInfo()
-    {};
-
-    OptionsX opts;
-    pdal::BOX3D bounds;
-    pdal::BOX3D trueBounds;
-    size_t pointSize;
-    std::string outputFile;
-    untwine::DimInfoList dimInfo;
-    pdal::SpatialReference srs;
-    int pointFormatId;
-
-    using d3 = std::array<double, 3>;
-    d3 scale { -1.0, -1.0, -1.0 };
-    d3 offset {};
-};
-
-#include <filesystem>
-
-
-// TODO: mac needs special variant
+#ifndef __APPLE_CC__
 std::vector<std::string> directoryList(const std::string& dir)
 {
     namespace fs = std::filesystem;
@@ -99,9 +56,77 @@ std::vector<std::string> directoryList(const std::string& dir)
     }
     return files;
 }
+#else
+
+#include <dirent.h>
+
+// Provide simple opendir/readdir solution for OSX because directory_iterator is
+// not available until OSX 10.15
+std::vector<std::string> directoryList(const std::string& dir)
+{
+
+    DIR *dpdf;
+    struct dirent *epdf;
+
+    std::vector<std::string> files;
+    dpdf = opendir(dir.c_str());
+    if (dpdf != NULL){
+       while ((epdf = readdir(dpdf))){
+            std::string name = untwine::fromNative(epdf->d_name);
+            // Skip paths
+            if (pdal::Utils::iequals(name, ".") ||
+                pdal::Utils::iequals(name, ".."))
+            {
+                continue;
+            }
+            else
+            {
+                // we expect the path + name
+                std::string p = dir + "/" + untwine::fromNative(epdf->d_name);
+                files.push_back(p);
+           }
+       }
+    }
+    closedir(dpdf);
+
+    return files;
+
+}
+#endif
+
 
 using namespace untwine::epf;
 using namespace pdal;
+
+using StringList = std::vector<std::string>;
+
+
+struct BaseInfo
+{
+public:
+
+    struct Options
+    {
+        std::string outputDir;
+        StringList inputFiles;
+        std::string tempDir;
+        bool preserveTempDir;
+        size_t fileLimit;
+        StringList dimNames;
+        std::string a_srs;
+        bool metadata;
+    } opts;
+
+    pdal::BOX3D trueBounds;
+    size_t pointSize;
+    untwine::DimInfoList dimInfo;
+    pdal::SpatialReference srs;
+    int pointFormatId;
+
+    using d3 = std::array<double, 3>;
+    d3 scale { -1.0, -1.0, -1.0 };
+    d3 offset {};
+};
 
 
 
@@ -261,7 +286,7 @@ static void fillMetadata(const pdal::PointLayoutPtr layout, BaseInfo &m_b, const
     using namespace pdal;
 
     // Info to be passed to sampler.
-    m_b.bounds = m_grid.processingBounds();
+    //m_b.bounds = m_grid.processingBounds();
     m_b.trueBounds = m_grid.conformingBounds();
     if (m_srsFileInfo.valid())
         m_b.srs = m_srsFileInfo.srs;
@@ -394,25 +419,32 @@ int main()
   std::unique_ptr<Writer> m_writer;
   untwine::ThreadPool m_pool(8);
 
+  // TODO: parse arguments
   m_b.opts.fileLimit = 10000000;
+  m_b.opts.outputDir = "/tmp/epf-tiles";
   m_b.opts.tempDir = "/tmp/epf";
   m_b.opts.inputFiles.push_back("/home/martin/qgis/point-cloud-sandbox/data/trencin.laz");
 
-  BOX3D totalBounds;
+  m_grid.setTileLength(100);
 
-  if (pdal::FileUtils::fileExists(m_b.opts.tempDir + "/" + MetadataFilename))
-    throw FatalError("Output directory already contains EPT data.");
+  // TODO: handle exceptions
 
-  m_grid.setCubic(m_b.opts.doCube);
+  // TODO: create/delete temporary dir
+
+  // TODO: tile naming?
+
+  // TODO: check whether the temporary dir has enough space
+
+  // TODO: progress reporting
+
+  //---------
+  // pass 1: read input files and write temporary files with raw point data
 
   // Create the file infos. As each info is created, the N x N x N grid is expanded to
   // hold all the points. If the number of points seems too large, N is expanded to N + 1.
   // The correct N is often wrong, especially for some areas where things are more dense.
   std::vector<untwine::epf::FileInfo> fileInfos;
   point_count_t totalPoints = createFileInfo(m_b.opts.inputFiles, m_b.opts.dimNames, fileInfos, m_b, m_grid, m_srsFileInfo);
-
-  //if (m_b.opts.level != -1)
-  //    m_grid.resetLevel(m_b.opts.level);
 
   // This is just a debug thing that will allow the number of input files to be limited.
   if (fileInfos.size() > m_b.opts.fileLimit)
@@ -452,6 +484,7 @@ int main()
           di.offset = layout->dimOffset(di.dim);
       }
   }
+
 #if 1   // TODO: only temporarily disabled to test writing of output
   // Make a writer with NumWriters threads.
   m_writer.reset(new Writer(m_b.opts.tempDir, NumWriters, layout->pointSize()));
@@ -487,23 +520,19 @@ int main()
       throw FatalError(errors.front());
 
 
-  //cout << "Hello World!  " << totalPoints << " " << fileInfos.size() << endl;
-
   //---------
+  // pass 2: write the final LAS/LAZ tiles
 
   fillMetadata( layout, m_b, m_grid, m_srsFileInfo );
 
-  //---------
-
   untwine::ThreadPool m_pool2(8);
 
-  std::vector<std::string> lstBinFiles = directoryList("/tmp/epf");
-  std::string finalDir = "/tmp/epf-tiles";
+  std::vector<std::string> lstBinFiles = directoryList(m_b.opts.tempDir);
 
   int outFileIdx = 0;
   for ( std::string binFile : lstBinFiles )
   {
-      std::string outFilename = finalDir + "/" + std::to_string(outFileIdx) + ".laz";    // TODO: use tile coords!
+      std::string outFilename = m_b.opts.outputDir + "/" + std::to_string(outFileIdx) + ".laz";    // TODO: use tile coords!
       outFileIdx++;
 
       m_pool2.add([binFile, outFilename, &m_b]()
