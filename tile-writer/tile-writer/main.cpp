@@ -351,8 +351,9 @@ static void fillMetadata(const pdal::PointLayoutPtr layout, BaseInfo &m_b, const
     m_b.offset[0] = calcOffset(m_b.trueBounds.minx, m_b.trueBounds.maxx, m_b.scale[0]);
     m_b.offset[1] = calcOffset(m_b.trueBounds.miny, m_b.trueBounds.maxy, m_b.scale[1]);
     m_b.offset[2] = calcOffset(m_b.trueBounds.minz, m_b.trueBounds.maxz, m_b.scale[2]);
-    std::cout << "fill metadata: " << m_b.scale[0] << " " << m_b.scale[1] << " " << m_b.scale[2]
-              << m_b.offset[0] << " " << m_b.offset[1] << " " << m_b.offset[2] << std::endl;
+
+//    std::cout << "fill metadata: " << m_b.scale[0] << " " << m_b.scale[1] << " " << m_b.scale[2]
+//              << m_b.offset[0] << " " << m_b.offset[1] << " " << m_b.offset[2] << std::endl;
 }
 
 
@@ -479,12 +480,11 @@ void createDirs(const BaseInfo::Options& options)
             throw FatalError("Couldn't create output directory: " + options.outputDir + "'.");
     }
 
-    bool tempExists = pdal::FileUtils::fileExists(options.tempDir);
-    if (tempExists && !pdal::FileUtils::isDirectory(options.tempDir))
+    if (pdal::FileUtils::fileExists(options.tempDir) && !pdal::FileUtils::isDirectory(options.tempDir))
         throw FatalError("Can't use temp directory - exists as a regular or special file.");
     if (!options.preserveTempDir)
         pdal::FileUtils::deleteDirectory(options.tempDir);
-    if (!tempExists && !pdal::FileUtils::createDirectory(options.tempDir))
+    if (!pdal::FileUtils::fileExists(options.tempDir) && !pdal::FileUtils::createDirectory(options.tempDir))
         throw FatalError("Couldn't create temp directory: '" + options.tempDir + "'.");
 }
 
@@ -543,6 +543,19 @@ static void tilingPass1(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
       }
   }
 
+  fillMetadata( layout, m_b, m_grid, m_srsFileInfo );
+
+  // Check if we have enough disk space at all
+  size_t bytesNeeded = totalPoints * m_b.pointSize;
+  std::filesystem::space_info space_info = std::filesystem::space(m_b.opts.tempDir);
+  std::cout << "Total points:     " << totalPoints/1000000. << " M" << std::endl;
+  std::cout << "Space needed:     " << bytesNeeded/1000./1000./1000. << " GB" << std::endl;
+  std::cout << "Space available:  " << space_info.available/1000./1000./1000. << " GB" << std::endl;
+  if (space_info.available < bytesNeeded)
+    throw FatalError("Not enough space available for processing");
+
+  // TODO: ideally we should check also for space in the output directory (but that's harder to estimate)
+
 #if 1   // TODO: only temporarily disabled to test writing of output
   // Make a writer with NumWriters threads.
   m_writer.reset(new Writer(m_b.opts.tempDir, NumWriters, layout->pointSize()));
@@ -576,8 +589,6 @@ static void tilingPass1(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   std::vector<std::string> errors = m_pool.clearErrors();
   if (errors.size())
       throw FatalError(errors.front());
-
-  fillMetadata( layout, m_b, m_grid, m_srsFileInfo );
 }
 
 
@@ -672,8 +683,6 @@ int main(int argc, char *argv[])
   FileInfo m_srsFileInfo;
 
   // TODO: tile naming?
-
-  // TODO: check whether the temporary dir has enough space
 
   // TODO: progress reporting
 
