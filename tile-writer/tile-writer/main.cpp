@@ -111,6 +111,7 @@ public:
         StringList inputFiles;
         std::string tempDir;
         bool preserveTempDir;
+        double tileLength;     // length of the square tile
         size_t fileLimit;
         StringList dimNames;
         std::string a_srs;
@@ -407,38 +408,95 @@ static void writeOutputFile(const std::string& filename, pdal::PointViewPtr view
 }
 
 
+#include <pdal/util/ProgramArgs.hpp>
 
 
-int main()
+void addArgs(pdal::ProgramArgs& programArgs, BaseInfo::Options& options, pdal::Arg * &tempArg)
 {
+    programArgs.add("output_dir,o", "Output directory/filename for single-file output",
+        options.outputDir).setPositional();
+    programArgs.add("files,i", "Input files/directory", options.inputFiles).setPositional();
+    programArgs.add("length,l", "Tile length", options.tileLength, 1000.);
+    tempArg = &(programArgs.add("temp_dir", "Temp directory", options.tempDir));
 
-  // originally member vars
-  untwine::epf::TileGrid m_grid;
-  BaseInfo m_b;
-  FileInfo m_srsFileInfo;
-  std::unique_ptr<Writer> m_writer;
-  untwine::ThreadPool m_pool(8);
+//    programArgs.add("preserve_temp_dir", "Remove files from the temp directory",
+//        options.preserveTempDir);
+//    programArgs.add("file_limit", "Only load 'file_limit' files, even if more exist",
+//        options.fileLimit, (size_t)10000000);
+    programArgs.add("dims", "Dimensions to load. Note that X, Y and Z are always "
+        "loaded.", options.dimNames);
+    programArgs.add("a_srs", "Assign output SRS",
+        options.a_srs, "");
+    programArgs.add("metadata", "Write PDAL metadata to VLR output",
+        options.metadata, false);
+}
 
-  // TODO: parse arguments
-  m_b.opts.fileLimit = 10000000;
-  m_b.opts.outputDir = "/tmp/epf-tiles";
-  m_b.opts.tempDir = "/tmp/epf";
-  m_b.opts.inputFiles.push_back("/home/martin/qgis/point-cloud-sandbox/data/trencin.laz");
+bool handleOptions(pdal::StringList& arglist, BaseInfo::Options& options)
+{
+    pdal::ProgramArgs programArgs;
+    pdal::Arg *tempArg;
 
-  m_grid.setTileLength(100);
+    addArgs(programArgs, options, tempArg);
+    try
+    {
+        bool version;
+        bool help;
+        pdal::ProgramArgs hargs;
+        hargs.add("version", "Report the tile-writer version.", version);
+        hargs.add("help", "Print some help.", help);
 
-  // TODO: handle exceptions
+        hargs.parseSimple(arglist);
+        if (version)
+            std::cout << "tile-writer version (" << 0 << ")\n";  // TODO
+        if (help)
+        {
+            std::cout << "Usage: tile-writer [output file/directory] <options>\n";
+            programArgs.dump(std::cout, 2, 80);
+        }
+        if (help || version)
+            return false;
 
-  // TODO: create/delete temporary dir
+        programArgs.parse(arglist);
 
-  // TODO: tile naming?
+        if (!tempArg->set())
+        {
+            options.tempDir = options.outputDir + "/temp";
+        }
+    }
+    catch (const pdal::arg_error& err)
+    {
+        throw FatalError(err.what());
+    }
+    return true;
+}
 
-  // TODO: check whether the temporary dir has enough space
 
-  // TODO: progress reporting
+void createDirs(const BaseInfo::Options& options)
+{
+    if ( !pdal::FileUtils::isDirectory(options.outputDir) )
+    {
+        if (!pdal::FileUtils::createDirectory(options.outputDir))
+            throw FatalError("Couldn't create output directory: " + options.outputDir + "'.");
+    }
 
+    bool tempExists = pdal::FileUtils::fileExists(options.tempDir);
+    if (tempExists && !pdal::FileUtils::isDirectory(options.tempDir))
+        throw FatalError("Can't use temp directory - exists as a regular or special file.");
+    if (!options.preserveTempDir)
+        pdal::FileUtils::deleteDirectory(options.tempDir);
+    if (!tempExists && !pdal::FileUtils::createDirectory(options.tempDir))
+        throw FatalError("Couldn't create temp directory: '" + options.tempDir + "'.");
+}
+
+
+
+static void tilingPass1(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo)
+{
   //---------
   // pass 1: read input files and write temporary files with raw point data
+
+  std::unique_ptr<Writer> m_writer;
+  untwine::ThreadPool m_pool(8);
 
   // Create the file infos. As each info is created, the N x N x N grid is expanded to
   // hold all the points. If the number of points seems too large, N is expanded to N + 1.
@@ -519,11 +577,14 @@ int main()
   if (errors.size())
       throw FatalError(errors.front());
 
+  fillMetadata( layout, m_b, m_grid, m_srsFileInfo );
+}
 
+
+static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo)
+{
   //---------
   // pass 2: write the final LAS/LAZ tiles
-
-  fillMetadata( layout, m_b, m_grid, m_srsFileInfo );
 
   untwine::ThreadPool m_pool2(8);
 
@@ -588,6 +649,62 @@ int main()
   }
 
   m_pool2.join();
+}
+
+
+#ifdef _WIN32
+int wmain( int argc, wchar_t *argv[ ], wchar_t *envp[ ] )
+#else
+int main(int argc, char *argv[])
+#endif
+{
+  std::vector<std::string> arglist;
+
+  // Skip the program name.
+  argv++;
+  argc--;
+  while (argc--)
+      arglist.push_back(untwine::fromNative(*argv++));
+
+  // originally member vars
+  untwine::epf::TileGrid m_grid;
+  BaseInfo m_b;
+  FileInfo m_srsFileInfo;
+
+  // TODO: tile naming?
+
+  // TODO: check whether the temporary dir has enough space
+
+  // TODO: progress reporting
+
+  try
+  {
+      // parse arguments
+      if (!handleOptions(arglist, m_b.opts))
+          return 0;
+
+      m_grid.setTileLength(m_b.opts.tileLength);
+
+      createDirs(m_b.opts);
+
+      tilingPass1(m_b, m_grid, m_srsFileInfo);
+      tilingPass2(m_b, m_grid, m_srsFileInfo);
+  }
+  catch (const FatalError& err)
+  {
+      std::cerr << "FATAL ERROR: " << err.what() << std::endl;
+      return -1;
+  }
+  catch (const std::exception& ex)
+  {
+      std::cerr << "Exception: " << ex.what() << std::endl;
+      return -1;
+  }
+  catch (...)
+  {
+      std::cerr << "Unknown/unexpected exception." << std::endl;
+      return -1;
+  }
 
   return 0;
 }

@@ -14,3 +14,10 @@ Single pass tiling can be done with "pdal tile" kernel, but it can easily run ou
 of open files (it keeps all output LAS/LAZ files open until it is finished).
 
 License: GPL3+
+
+## Usage
+
+Create tiles (sized 100x100):
+```
+tile-writer -l 100 -o ~/data/tiles ~/data/raw/*.laz
+```
