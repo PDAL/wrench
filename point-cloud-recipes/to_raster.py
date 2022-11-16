@@ -16,6 +16,12 @@ print(args)
 
 r = pdal.Reader(args.input_file)
 
+# TODO: could export multiple raster files using multiple Writer() stages with different "where" clauses
+
+# TODO: "combined product" - bands: DTM + HAG + DSM + noise point count + intensity + max num of returns
+#              ... + attach names for bands  (+ attach RAT [return number/class])
+#   (lerc for float bands [max_z_err = [scale of point clouds]]   / max. compatibility mode LZW)
+
 radius = args.resolution * (2**0.5)
 writer_args = {
     "resolution": args.resolution,
@@ -25,7 +31,13 @@ if args.attribute is not None:
     writer_args["dimension"] = args.attribute
 w = pdal.Writer(args.output, **writer_args)
 
+# TODO: binmode=true for writer -- from pdal 2.5
+
 # TODO: use COG by default? set up gdal options (compression...) ?
+
+# TODO? could export raster attribute table gdal_opts/metadata
+
+# TODO: control origin point (to line up) - optional input parameter
 
 p = r | w
 
