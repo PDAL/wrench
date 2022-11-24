@@ -3,6 +3,8 @@ import argparse
 import time
 import pdal
 
+from tqdm import tqdm
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_file')
@@ -17,12 +19,12 @@ if args.assign_crs is not None:
     # TODO: try to parse & validate CRS first
     reader_args['override_srs'] = args.assign_crs
 
-pi = pdal.Pipeline()
-pi |= pdal.Reader(args.input_file, **reader_args)
+p = pdal.Pipeline()
+p |= pdal.Reader(args.input_file, **reader_args)
 if args.reproject is not None:
     # TODO: try to parse & validate CRS first
     # TODO: try to figure out good scale+offset
-    pi |= pdal.Filter.reprojection(out_srs=args.reproject)
+    p |= pdal.Filter.reprojection(out_srs=args.reproject)
 
 
 writer_args = {
@@ -35,7 +37,18 @@ if args.reproject is not None:
     writer_args["offset_x"] = "auto"
     writer_args["offset_y"] = "auto"
     writer_args["offset_z"] = "auto"
-pi |= pdal.Writer(args.output, **writer_args)
+p |= pdal.Writer(args.output, **writer_args)
 
 #pi.execute()
-pi.execute_streaming()
+#pi.execute_streaming()
+
+total_pts = p.quickinfo['readers.las']['num_points']
+total_pts_str = "{:.1f}M pts".format(total_pts/1000000)
+
+with tqdm(total=total_pts, desc="Translate", ncols=80, bar_format="{l_bar}{bar}| "+total_pts_str+" {remaining}") as pbar:
+    pt = 0
+    it = p.iterator(chunk_size=100000)
+    for array in it:
+        pt += 100000
+        pbar.update(100000)
+        #print("{:.1f} M / {:.1f} M pts".format(pt/1000000, total_pts/1000000))

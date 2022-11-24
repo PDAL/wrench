@@ -4,6 +4,8 @@ import argparse
 import time
 import pdal
 
+from tqdm import tqdm
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_file')
@@ -43,20 +45,17 @@ p = r | w
 
 t0 = time.time()
 
-p.execute()
+total_pts = p.quickinfo['readers.las']['num_points']
+total_pts_str = "{:.1f}M pts".format(total_pts/1000000)
+
+with tqdm(total=total_pts, desc="Export raster", ncols=80, bar_format="{l_bar}{bar}| "+total_pts_str+" {remaining}") as pbar:
+    pt = 0
+    it = p.iterator(chunk_size=100000)
+    for array in it:
+        pt += 100000
+        pbar.update(100000)
+        #print("{:.1f} M / {:.1f} M pts".format(pt/1000000, total_pts/1000000))
+
+
 t1 = time.time()
 print("total: " + str(t1-t0) + " sec")
-
-"""
-r = pdal.Reader("trencin-2-ground.laz")
-hb = pdal.Filter.hexbin(edge_size=1)
-#w = pdal.Writer("/tmp/out.las")
-
-p = pdal.Pipeline([r, hb])
-print(p.execute_streaming())
-#hb.metadata
-print(p.metadata.keys())
-m = p.metadata['metadata']
-print(m)
-print(m['filters.hexbin']['boundary'])
-"""

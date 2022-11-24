@@ -1,10 +1,9 @@
 
-
-
-
 import argparse
 import time
 import pdal
+
+from tqdm import tqdm
 
 
 parser = argparse.ArgumentParser()
@@ -36,7 +35,16 @@ p = pdal.Pipeline(pipe)
 
 t0 = time.time()
 
-print(p.execute_streaming())
+total_pts = sum( info['num_points'] for info in p.quickinfo['readers.las'] )
+total_pts_str = "{:.1f}M pts".format(total_pts/1000000)
+
+with tqdm(total=total_pts, desc="Merge", ncols=80, bar_format="{l_bar}{bar}| "+total_pts_str+" {remaining}") as pbar:
+    pt = 0
+    it = p.iterator(chunk_size=100000)
+    for array in it:
+        pt += 100000
+        pbar.update(100000)
+        #print("{:.1f} M / {:.1f} M pts".format(pt/1000000, total_pts/1000000))
 
 t1 = time.time()
 print("total: " + str(t1-t0) + " sec")
