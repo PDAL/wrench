@@ -1,0 +1,116 @@
+
+#include <iostream>
+#include <thread>
+
+#include <pdal/PipelineManager.hpp>
+#include <pdal/Stage.hpp>
+#include <pdal/util/ProgramArgs.hpp>
+
+#include <gdal/gdal.h>
+#include <gdal/ogr_api.h>
+#include <gdal/ogr_srs_api.h>
+
+#include "utils.hpp"
+#include "alg.hpp"
+
+using namespace pdal;
+
+
+void Boundary::addArgs()
+{
+    argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
+}
+
+bool Boundary::checkArgs()
+{
+    if (!argOutput->set())
+    {
+        std::cerr << "missing output" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+void Boundary::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds)
+{
+    // TODO: how to deal parallel runs - create unions of boundary geometries of tiles? need some collars?
+
+    std::unique_ptr<PipelineManager> manager( new PipelineManager );
+    Stage& r = manager->makeReader(inputFile, "");
+
+    // TODO: what edge size? (by default samples 5000 points if not specified
+    // TODO: set threshold ? (default at least 16 points to keep the cell)
+    // btw. if threshold=0, there are still missing points because of simplification (smooth=True)
+
+    pdal::Options hexbin_opts;
+    hexbin_opts.add(pdal::Option("edge_size", 5));
+    hexbin_opts.add(pdal::Option("threshold", 0));
+
+    Stage& w = manager->makeFilter( "filters.hexbin", r, hexbin_opts );
+
+    pipelines.push_back(std::move(manager));
+}
+
+
+void Boundary::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
+{
+    // extract boundary polygon
+    PipelineManager *pm = pipelines[0].get();
+    pdal::MetadataNode mn = pm->getMetadata();
+    //Utils::toJSON(mn, std::cout);
+
+    pdal::MetadataNode hb = mn.findChild("filters.hexbin").findChild("boundary");
+    //Utils::toJSON(hb, std::cout);
+    std::string wkt = hb.value();
+
+    // TODO: may be copc reader too...
+    std::string crs_wkt = mn.findChild("readers.las").findChild("spatialreference").value();
+
+    GDALAllRegister();
+
+    OGRSpatialReferenceH hSrs;
+    hSrs = OSRNewSpatialReference(crs_wkt.c_str());
+    assert(hSrs);
+
+    OGRwkbGeometryType wkbType = wkt.find("MULTI") == std::string::npos ? wkbPolygon : wkbMultiPolygon;
+
+    OGRSFDriverH hDriver = OGRGetDriverByName("GPKG");
+    if (hDriver == nullptr)
+    {
+        std::cout << "failed to create GPKG driver" << std::endl;
+        return;
+    }
+
+    GDALDatasetH hDS = GDALCreate( hDriver, outputFile.c_str(), 0, 0, 0, GDT_Unknown, nullptr );
+    if (hDS == nullptr)
+    {
+        std::cout << "failed to create output file: " << outputFile << std::endl;
+        return;
+    }
+
+    OGRLayerH hLayer = GDALDatasetCreateLayer( hDS, "boundary", hSrs, wkbType, nullptr );
+    if (hLayer == nullptr)
+    {
+        std::cout << "failed to create layer in the output file: " << outputFile << std::endl;
+        return;
+    }
+
+    OGRGeometryH geom;
+    char *wkt_ptr = wkt.data();
+    if (OGR_G_CreateFromWkt(&wkt_ptr, hSrs, &geom) != OGRERR_NONE)
+    {
+        std::cout << "Failed to parse geometry: " << wkt << std::endl;
+        return;
+    }
+    OGRFeatureH hFeature = OGR_F_Create(OGR_L_GetLayerDefn(hLayer));
+    OGR_F_SetGeometry(hFeature, geom);
+    if (OGR_L_CreateFeature(hLayer, hFeature) != OGRERR_NONE)
+    {
+        std::cout << "failed to create a new feature in the output file!" << std::endl;
+        return;
+    }
+
+    OGR_F_Destroy(hFeature);
+    OSRDestroySpatialReference(hSrs);
+    GDALClose(hDS);
+}
