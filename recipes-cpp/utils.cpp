@@ -60,7 +60,7 @@ QuickInfo getQuickInfo(std::string inputFile)
     // return r.preview().m_pointCount;
 }
 
-void printReaderMetadata(std::string inputFile)
+MetadataNode getReaderMetadata(std::string inputFile)
 {
     // compared to quickinfo / preview, this provides more info...
 
@@ -68,8 +68,7 @@ void printReaderMetadata(std::string inputFile)
     Stage &r = m.makeReader(inputFile, "");
     FixedPointTable table(10000);
     r.prepare(table);
-    MetadataNode n = r.getMetadata();
-    Utils::toJSON(n, std::cout);
+    return r.getMetadata();
 }
 
 

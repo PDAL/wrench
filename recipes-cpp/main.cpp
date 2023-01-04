@@ -10,6 +10,7 @@ TODO:
 #include <vector>
 
 #include "alg.hpp"
+#include "vpc.hpp"
 
 
 int main(int argc, char* argv[])
@@ -44,7 +45,7 @@ int main(int argc, char* argv[])
     args.push_back("--resolution=1");
     args.push_back("--tile-size=250");
     args.push_back("--threads=4");
-#elif 1
+#elif 0
     std::string cmd = "boundary";
     std::vector<std::string> args;
 
@@ -54,13 +55,20 @@ int main(int argc, char* argv[])
     //args.push_back("--resolution=1");
     //args.push_back("--tile-size=250");
     //args.push_back("--threads=4");
-#else
+#elif 0
     std::string cmd = "clip";
     std::vector<std::string> args;
 
     args.push_back("--input=/home/martin/qgis/point-cloud-sandbox/data/24-fixed.las");
     args.push_back("--polygon=/home/martin/qgis/point-cloud-sandbox/data/24-polygon.gpkg");
     args.push_back("--output=/tmp/clipped.las");
+#else
+    std::string cmd = "build_vpc";
+    std::vector<std::string> args;
+    args.push_back("--output=/tmp/first.vpc");
+    args.push_back("/home/martin/tatry-tiles/tatry_0_1.laz");
+    args.push_back("/home/martin/tatry-tiles/tatry_0_2.laz");
+    args.push_back("/home/martin/tatry-tiles/tatry_0_3.laz");
 #endif
 
     std::cout << "command: " << cmd << std::endl;
@@ -79,6 +87,10 @@ int main(int argc, char* argv[])
     {
         Clip clip;
         runStreamingAlg(args, clip);
+    }
+    else if (cmd == "build_vpc")
+    {
+        buildVpc(args);
     }
     else
     {
