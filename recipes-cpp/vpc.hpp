@@ -29,4 +29,6 @@ struct VirtualPointCloud
     bool read(std::string filename);
     bool write(std::string filename);
 
+    point_count_t totalPoints() const;
+    BOX3D box3d() const;
 };

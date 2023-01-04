@@ -5,12 +5,36 @@
 
 using namespace pdal;
 
-struct ParallelTileInfo
+struct ParallelJobInfo
 {
-    int tileX, tileY;
+    enum ParallelMode {
+        Single,      //!< no parallelism
+        FileBased,   //!< each input file processed separately
+        Spatial,     //!< using tiles - "box" should be used
+    } mode;
+
+    // what input point cloud files to read for a job
+    std::vector<std::string> inputFilenames;
+
+    // what is the output file name of this job
+    std::string outputFilename;
+
+    // bounding box for this job (for input/output)
     BOX2D box;
 
-    std::string outputFilename;
+    // modes of operation:
+    // A. multi input without box  (LAS/LAZ)    -- per file strategy
+    //    - all input files are processed, no filtering on bounding box
+    // B. multi input with box     (anything)   -- tile strategy
+    //    - all input files are processed, but with filtering applied
+    //    - COPC: filtering inside readers.copc with "bounds" argument
+    //    - LAS/LAZ: filter either using CropFilter after reader -or- "where" 
+
+    // streaming algs:
+    // - multi-las: if not overlapping:  mode A
+    //              if overlapping:      mode A - with a warning it is inefficient?
+    // - multi-copc:  mode B
+    // - single-copc: mode B or just single pipeline
 };
 
 

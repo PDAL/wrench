@@ -6,7 +6,7 @@
 
 using namespace pdal;
 
-struct ParallelTileInfo;
+struct ParallelJobInfo;
 
 
 struct StreamingAlg
@@ -60,7 +60,7 @@ struct Density : public StreamingAlg
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 
     // new
-    std::unique_ptr<PipelineManager> pipeline(ParallelTileInfo *tile = nullptr) const;
+    std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile = nullptr) const;
 };
 
 
@@ -86,15 +86,21 @@ struct Clip : public StreamingAlg
     // parameters from the user
     std::string outputFile;
     std::string polygonFile;
+    std::string outputFormat;  // las / laz / copc
 
     // args - initialized in addArgs()
     pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argOutputFormat = nullptr;
     pdal::Arg* argPolygon = nullptr;
+
+    std::vector<std::string> tileOutputFiles;
 
     // impl
     virtual void addArgs() override;
     virtual bool checkArgs() override;
     virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds) override;
-    //virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 
+    // new
+    //std::unique_ptr<PipelineManager> pipeline(ParallelTileInfo *tile, const pdal::Options &crop_opts) const;
 };

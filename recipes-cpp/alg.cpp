@@ -2,6 +2,7 @@
 #include "alg.hpp"
 
 #include "utils.hpp"
+#include "vpc.hpp"
 
 #include <thread>
 
@@ -16,12 +17,27 @@ bool runStreamingAlg(std::vector<std::string> args, StreamingAlg &alg)
     if ( !alg.parseArgs(args) )
         return false;
 
-    QuickInfo qi = getQuickInfo(alg.inputFile);
-    point_count_t totalPoints = qi.m_pointCount;
+    point_count_t totalPoints = 0;
+    BOX3D bounds;
+
+    if (ends_with(alg.inputFile, ".vpc"))
+    {
+        VirtualPointCloud vpc;
+        if (!vpc.read(alg.inputFile))
+            return false;
+        totalPoints = vpc.totalPoints();
+        bounds = vpc.box3d();
+    }
+    else
+    {
+        QuickInfo qi = getQuickInfo(alg.inputFile);
+        totalPoints = qi.m_pointCount;
+        bounds = qi.m_bounds;
+    }
 
     std::vector<std::unique_ptr<PipelineManager>> pipelines;
 
-    alg.preparePipelines(pipelines, qi.m_bounds);
+    alg.preparePipelines(pipelines, bounds);
 
     if (pipelines.empty())
         return false;

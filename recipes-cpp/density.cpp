@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <filesystem>
 #include <thread>
 
 #include <pdal/PipelineManager.hpp>
@@ -10,9 +11,11 @@
 
 #include "utils.hpp"
 #include "alg.hpp"
+#include "vpc.hpp"
 
 using namespace pdal;
 
+namespace fs = std::filesystem;
 
 void Density::addArgs()
 {
@@ -37,12 +40,16 @@ bool Density::checkArgs()
 }
 
 
-std::unique_ptr<PipelineManager> Density::pipeline(ParallelTileInfo *tile) const
+std::unique_ptr<PipelineManager> Density::pipeline(ParallelJobInfo *tile) const
 {
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
-    Stage& r = manager->makeReader(inputFile, "");
 
-    if (tile)
+    // TODO: extend to handle multiple readers
+    assert(tile->inputFilenames.size() == 1);
+
+    Stage& r = manager->makeReader(tile->inputFilenames[0], "");
+
+    if (tile->mode == ParallelJobInfo::Spatial)
     {
         // for parallel runs
         assert(r.getName() == "readers.copc");
@@ -62,7 +69,7 @@ std::unique_ptr<PipelineManager> Density::pipeline(ParallelTileInfo *tile) const
     writer_opts.add(pdal::Option("gdalopts", "TILED=YES"));
     writer_opts.add(pdal::Option("gdalopts", "COMPRESS=DEFLATE"));
 
-    if (tile)
+    if (tile->box.valid())
     {
         // TODO: for tiles that are smaller than full box - only use intersection
         // to avoid empty areas in resulting rasters
@@ -77,9 +84,7 @@ std::unique_ptr<PipelineManager> Density::pipeline(ParallelTileInfo *tile) const
     // TODO: "writers.gdal: Requested driver 'COG' does not support file creation.""
     //   writer_opts.add(pdal::Option("gdaldriver", "COG"));
 
-    std::string output = tile ? tile->outputFilename : outputFile;
-
-    pdal::StageCreationOptions opts{ output, "", &r, writer_opts };
+    pdal::StageCreationOptions opts{ tile->outputFilename, "", &r, writer_opts };
     Stage& w = manager->makeWriter( opts );
     return manager;
 }
@@ -87,10 +92,51 @@ std::unique_ptr<PipelineManager> Density::pipeline(ParallelTileInfo *tile) const
 
 void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds)
 {
-    bool parallel_run = ends_with(inputFile, ".copc.laz");
-
-    if (parallel_run)
+    if (ends_with(inputFile, ".vpc"))
     {
+        // using per-file processing
+
+        // TODO: this assumes non-overlapping files - for overlapping we would need extra input files
+
+        // VPC handling
+        VirtualPointCloud vpc;
+        if (!vpc.read(inputFile))
+            return;
+
+        // for /tmp/hello.tif we will use /tmp/hello dir for all results
+        fs::path outputParentDir = fs::path(outputFile).parent_path();
+        fs::path outputSubdir = outputParentDir / fs::path(outputFile).stem();
+        fs::create_directories(outputSubdir);
+
+        int i = 0;
+        for ( auto& f : vpc.files )
+        {
+            ParallelJobInfo tile;
+            tile.mode = ParallelJobInfo::FileBased;
+            tile.box = f.bbox.to2d();
+            tile.inputFilenames.push_back(f.filename);
+
+            // create temp output file names
+
+            // for input file /x/y/z.las that goes to /tmp/hello.vpc,
+            // individual output file will be called /tmp/hello/z.las
+            fs::path inputBasename = fs::path(f.filename).stem();
+            tile.outputFilename = (outputSubdir / inputBasename).string() + ".tif";
+
+            tileOutputFiles.push_back(tile.outputFilename);
+
+            pipelines.push_back(pipeline(&tile));
+        }
+    }
+    else if (ends_with(inputFile, ".copc.laz"))
+    {
+        // using square tiles for single COPC
+
+        // for /tmp/hello.tif we will use /tmp/hello dir for all results
+        fs::path outputParentDir = fs::path(outputFile).parent_path();
+        fs::path outputSubdir = outputParentDir / fs::path(outputFile).stem();
+        fs::create_directories(outputSubdir);
+
         // TODO: optionally adjust xmin/ymin to have nice numbers?
 
         double xmin = bounds.minx, ymin = bounds.miny;
@@ -108,22 +154,21 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
         {
             for (int ix = 0; ix < n_tiles_x; ++ix)
             {
-                ParallelTileInfo tile;
-                tile.tileX = ix;
-                tile.tileY = iy;
+                ParallelJobInfo tile;
+                tile.mode = ParallelJobInfo::Spatial;
                 tile.box = BOX2D(xmin+tile_size*ix,
                                 ymin+tile_size*iy,
                                 xmin+tile_size*(ix+1),
                                 ymin+tile_size*(iy+1));
+                tile.inputFilenames.push_back(inputFile);
 
                 // create temp output file names
-                std::string output = outputFile;
-                assert(ends_with(output, ".tif"));
-                output.erase(output.rfind(".tif"), 4);
-                output += "-" + std::to_string(tile.tileX) + "-" + std::to_string(tile.tileY) + ".tif";
-                tile.outputFilename = output;
+                // for tile (x=2,y=3) that goes to /tmp/hello.tif,
+                // individual output file will be called /tmp/hello/2_3.tif
+                fs::path inputBasename = std::to_string(ix) + "_" + std::to_string(iy);
+                tile.outputFilename = (outputSubdir / inputBasename).string() + ".tif";
 
-                tileOutputFiles.push_back(output);
+                tileOutputFiles.push_back(tile.outputFilename);
 
                 pipelines.push_back(pipeline(&tile));
             }
@@ -131,7 +176,13 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
     }
     else
     {
-        pipelines.push_back(pipeline());
+        // single input LAS/LAZ - no parallelism
+
+        ParallelJobInfo tile;
+        tile.mode = ParallelJobInfo::Single;
+        tile.inputFilenames.push_back(inputFile);
+        tile.outputFilename = outputFile;
+        pipelines.push_back(pipeline(&tile));
     }
 
 }
@@ -139,8 +190,6 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
 
 void Density::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
 {
-    (pipelines);
-
     if (pipelines.size() > 1)
     {
         // build a VRT so that all tiles can be handled as a single data source
@@ -159,9 +208,19 @@ void Density::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
         // https://gdal.org/api/gdal_utils.html
         GDALDatasetH ds = GDALBuildVRT(output.c_str(), (int)dsNames.size(), nullptr, dsNames.data(), nullptr, nullptr);
         assert(ds);
-        GDALClose(ds);
 
-        // TODO: optionally export to COG (?)
-    }
+        // export to COG
+        // TODO: make this optional?
+        const char* args[] = { "-of", "COG", "-co", "COMPRESS=DEFLATE", NULL };
+        GDALTranslateOptions* psOptions = GDALTranslateOptionsNew((char**)args, NULL);
+        
+        GDALDatasetH dsFinal = GDALTranslate(outputFile.c_str(), ds, psOptions, nullptr);
+        assert(dsFinal);
+        GDALTranslateOptionsFree(psOptions);
+        GDALClose(ds);
+        GDALClose(dsFinal);
+
+        // TODO: remove VRT + partial tifs after gdal_translate?
+     }
 
 }

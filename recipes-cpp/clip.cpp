@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <filesystem>
 #include <thread>
 
 #include <pdal/PipelineManager.hpp>
@@ -12,13 +13,17 @@
 
 #include "utils.hpp"
 #include "alg.hpp"
+#include "vpc.hpp"
 
 using namespace pdal;
+
+namespace fs = std::filesystem;
 
 
 void Clip::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
+    argOutputFormat = &programArgs.add("output-format,f", "Output format (las/laz/copc)", outputFormat);
     argPolygon = &programArgs.add("polygon,p", "Input polygon vector file", polygonFile);
 }
 
@@ -35,12 +40,23 @@ bool Clip::checkArgs()
         return false;
     }
 
+    if (argOutputFormat->set())
+    {
+        if (outputFormat != "las" && outputFormat != "laz")
+        {
+            std::cerr << "unknown output format: " << outputFormat << std::endl;
+            return false;
+        }
+    }
+    else
+        outputFormat = "las";  // uncompressed by default
+
     return true;
 }
 
 
 // populate polygons into filters.crop options
-bool loadPolygons(const std::string &polygonFile, pdal::Options& crop_opts)
+bool loadPolygons(const std::string &polygonFile, pdal::Options& crop_opts, BOX2D& bbox)
 {
     GDALAllRegister();
 
@@ -51,8 +67,12 @@ bool loadPolygons(const std::string &polygonFile, pdal::Options& crop_opts)
         return false;
     }
 
+    // TODO: reproject polygons to the CRS of the point cloud if they are not the same
+
     OGRLayerH hLayer = GDALDatasetGetLayer(hDS, 0);
     //hLayer = GDALDatasetGetLayerByName( hDS, "point" );
+
+    OGREnvelope fullEnvelope;
 
     OGR_L_ResetReading(hLayer);
     OGRFeatureH hFeature;
@@ -61,32 +81,114 @@ bool loadPolygons(const std::string &polygonFile, pdal::Options& crop_opts)
         OGRGeometryH hGeometry = OGR_F_GetGeometryRef(hFeature);
         if ( hGeometry != NULL )
         {
+            OGREnvelope envelope;
+            OGR_G_GetEnvelope(hGeometry, &envelope);
+            if (!fullEnvelope.IsInit())
+                fullEnvelope = envelope;
+            else
+                fullEnvelope.Merge(envelope);
             crop_opts.add(pdal::Option("polygon", Polygon(hGeometry)));
         }
         OGR_F_Destroy( hFeature );
     }
     GDALClose( hDS );
+
+    bbox = BOX2D(fullEnvelope.MinX, fullEnvelope.MinY, fullEnvelope.MaxX, fullEnvelope.MaxY);
+
     return true;
 }
 
 
-void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pdal::Options &crop_opts)
 {
-    // TODO: parallel runs
+    assert(tile);
 
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
-    Stage& r = manager->makeReader(inputFile, "");
 
-    pdal::Options crop_opts;
-    if (!loadPolygons(polygonFile, crop_opts))
-        return;
+    Stage& r = manager->makeReader( tile->inputFilenames[0], "");
 
     Stage& f = manager->makeFilter( "filters.crop", r, crop_opts );
 
     pdal::Options writer_opts;
     writer_opts.add(pdal::Option("forward", "all"));
 
-    Stage& w = manager->makeWriter(outputFile, "", f, writer_opts);
+    Stage& w = manager->makeWriter( tile->outputFilename, "", f, writer_opts);
 
-    pipelines.push_back(std::move(manager));
+    return manager;
+}
+
+
+void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds)
+{
+    pdal::Options crop_opts;
+    BOX2D bbox;
+    if (!loadPolygons(polygonFile, crop_opts, bbox))
+        return;
+
+    if (ends_with(inputFile, ".vpc"))
+    {
+        if (!ends_with(outputFile, ".vpc"))
+        {
+            std::cout << "output should be VPC too" << std::endl;
+            return;
+        }
+
+        // for /tmp/hello.vpc we will use /tmp/hello dir for all results
+        fs::path outputParentDir = fs::path(outputFile).parent_path();
+        fs::path outputSubdir = outputParentDir / fs::path(outputFile).stem();
+        fs::create_directories(outputSubdir);
+
+        // VPC handling
+        VirtualPointCloud vpc;
+        if (!vpc.read(inputFile))
+            return;
+
+        // TODO: adjust total number of points based on skipped files
+
+        int i = 0;
+        for (const VirtualPointCloud::File& f : vpc.files)
+        {
+            if (!bbox.overlaps(f.bbox.to2d()))
+            {
+                //std::cout << "skipping " << f.filename << std::endl;
+                continue;  // we can safely skip
+            }
+
+            std::cout << "using " << f.filename << std::endl;
+
+            ParallelJobInfo tile;
+            tile.mode = ParallelJobInfo::FileBased;
+            tile.inputFilenames.push_back(f.filename);
+
+            // for input file /x/y/z.las that goes to /tmp/hello.vpc,
+            // individual output file will be called /tmp/hello/z.las
+            fs::path inputBasename = fs::path(f.filename).stem();
+            tile.outputFilename = (outputSubdir / inputBasename).string() + "." + outputFormat;
+
+            tileOutputFiles.push_back(tile.outputFilename);
+
+            pipelines.push_back(pipeline(&tile, crop_opts));
+        }
+    }
+    else
+    {
+        ParallelJobInfo tile;
+        tile.mode = ParallelJobInfo::Single;
+        tile.inputFilenames.push_back(inputFile);
+        tile.outputFilename = outputFile;
+        pipelines.push_back(pipeline(&tile, crop_opts));
+    }
+}
+
+void Clip::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
+{
+    if (tileOutputFiles.empty())
+        return;
+
+    // now build a new output VPC
+    std::vector<std::string> args;
+    args.push_back("--output=" + outputFile);
+    for (std::string f : tileOutputFiles)
+        args.push_back(f);
+    buildVpc(args);
 }

@@ -28,6 +28,7 @@ protected:
 
         bar_mutex.lock();
         global_bar->update();
+        //std::cout << "." << std::flush;
         bar_mutex.unlock();
 
         FixedPointTable::reset();
@@ -74,7 +75,7 @@ MetadataNode getReaderMetadata(std::string inputFile)
 
 void runPipelineParallel(point_count_t totalPoints, std::vector<std::unique_ptr<PipelineManager>>& pipelines, int max_threads)
 {
-    const int CHUNK_SIZE = 10'000;
+    const int CHUNK_SIZE = 1'000'000;
     int num_chunks = totalPoints / CHUNK_SIZE;
 
     std::cout << "total points: " << (float)totalPoints / 1'000'000 << "M" << std::endl;

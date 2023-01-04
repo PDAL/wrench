@@ -1,9 +1,10 @@
 
 /*
 TODO:
-- add writing of VPC + reading of VPC by algs
+- naming scheme when producing outputs from parallel jobs
 - boundary: parallel run
-- clip: parallel run  ... store pts as LAS/LAZ tiles, then A. make vpc-LAS or vpc-COPC or single-COPC ?
+- algs that output point cloud: support multi-copc or single-copc output - as a post-processing step?
+- VPC: overlapping files?
 */
 
 #include <iostream>
@@ -22,6 +23,7 @@ int main(int argc, char* argv[])
         std::cerr << " - boundary" << std::endl;
         std::cerr << " - clip" << std::endl;
         std::cerr << " - density" << std::endl;
+        std::cerr << " - build_vpc" << std::endl;
         return 1;
     }
     std::string cmd = argv[1];
@@ -29,7 +31,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> args;
     for ( int i = 2; i < argc; ++i )
         args.push_back(argv[i]);
-#elif 0
+#elif 1
     std::string cmd = "density";
     std::vector<std::string> args;
     // args.push_back("-i");
@@ -62,13 +64,35 @@ int main(int argc, char* argv[])
     args.push_back("--input=/home/martin/qgis/point-cloud-sandbox/data/24-fixed.las");
     args.push_back("--polygon=/home/martin/qgis/point-cloud-sandbox/data/24-polygon.gpkg");
     args.push_back("--output=/tmp/clipped.las");
-#else
+#elif 0
     std::string cmd = "build_vpc";
     std::vector<std::string> args;
-    args.push_back("--output=/tmp/first.vpc");
+    args.push_back("--output=/tmp/tatry-9.vpc");
     args.push_back("/home/martin/tatry-tiles/tatry_0_1.laz");
     args.push_back("/home/martin/tatry-tiles/tatry_0_2.laz");
     args.push_back("/home/martin/tatry-tiles/tatry_0_3.laz");
+    args.push_back("/home/martin/tatry-tiles/tatry_1_1.laz");
+    args.push_back("/home/martin/tatry-tiles/tatry_1_2.laz");
+    args.push_back("/home/martin/tatry-tiles/tatry_1_3.laz");
+    args.push_back("/home/martin/tatry-tiles/tatry_2_1.laz");
+    args.push_back("/home/martin/tatry-tiles/tatry_2_2.laz");
+    args.push_back("/home/martin/tatry-tiles/tatry_2_3.laz");
+#elif 0
+    std::string cmd = "clip";
+    std::vector<std::string> args;
+
+    args.push_back("--input=/tmp/tatry-9.vpc");
+    args.push_back("--polygon=/home/martin/qgis/point-cloud-sandbox/data/tatry.gpkg");
+    args.push_back("--output=/tmp/tatry-clipped.vpc");
+    //args.push_back("--output-format=laz");
+
+#else
+    std::string cmd = "density";
+    std::vector<std::string> args;
+    args.push_back("--input=/tmp/first.vpc");
+    args.push_back("--output=/tmp/first.tif");
+    args.push_back("--resolution=1");
+    args.push_back("--threads=4");
 #endif
 
     std::cout << "command: " << cmd << std::endl;

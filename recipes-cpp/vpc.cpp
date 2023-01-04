@@ -15,6 +15,9 @@ using json = nlohmann::json;
 
 using namespace pdal;
 
+// TODO:
+// - optionally support absolute paths (with a flag to build_vpc?)
+
 
 void VirtualPointCloud::clear()
 {
@@ -41,6 +44,8 @@ bool VirtualPointCloud::read(std::string filename)
         std::cout << "failed to read file " << filename << std::endl;
         return false;
     }
+
+    fs::path filenameParent = fs::path(filename).parent_path();
 
     json data;
     try
@@ -72,6 +77,13 @@ bool VirtualPointCloud::read(std::string filename)
         vpcf.bbox = BOX3D(
             jb[0].get<double>(), jb[1].get<double>(), jb[2].get<double>(),
             jb[3].get<double>(),jb[4].get<double>(), jb[5].get<double>() );
+
+        if (vpcf.filename.substr(0, 2) == "./")
+        {
+            // resolve relative path
+            vpcf.filename = fs::weakly_canonical(filenameParent / vpcf.filename).string();
+        }
+
         files.push_back(vpcf);
     }
 
@@ -87,11 +99,15 @@ bool VirtualPointCloud::write(std::string filename)
         return false;
     }
 
+    fs::path outputPath = fs::path(filename).parent_path();
+
     std::vector<nlohmann::ordered_json> jFiles;
     for ( const File &f : files )
     {
+        fs::path fRelative = fs::relative(f.filename, outputPath);
+
         jFiles.push_back({
-            { "filename", f.filename },
+            { "filename", "./" + fRelative.string() },
             { "count", f.count },
             { "bbox", { f.bbox.minx, f.bbox.miny, f.bbox.minz, f.bbox.maxx, f.bbox.maxy, f.bbox.maxz } },
         });
@@ -166,4 +182,22 @@ void buildVpc(std::vector<std::string> args)
 
     //Utils::toJSON(n, std::cout);
 
+}
+
+point_count_t VirtualPointCloud::totalPoints() const
+{
+    point_count_t cnt = 0;
+    for (const File &f : files)
+        cnt += f.count;
+    return cnt;
+}
+
+BOX3D VirtualPointCloud::box3d() const
+{
+    if (files.empty())
+        return BOX3D();
+    BOX3D b = files[0].bbox;
+    for (const File &f : files)
+        b.grow(f.bbox);
+    return b;
 }
