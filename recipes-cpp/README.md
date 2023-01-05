@@ -31,17 +31,25 @@ This is similar to GDAL's VRT - a single file referring to other files that cont
 
 To create a virtual point cloud:
 ```
-pdal_workbench build_vpc --output=hello.vrt data1.las data2.las data3.las
+pdal_workbench build_vpc --output=hello.vpc data1.las data2.las data3.las
 ```
 
 Afterwards, other algorithms can be applied to a VPC:
 ```
-pdal_workbench clip --input=hello.vrt --polygon=clip.gpkg --output=hello_clipped.vrt
+pdal_workbench clip --input=hello.vpc --polygon=clip.gpkg --output=hello_clipped.vpc
 ```
 
 This will create a grid for each data file separately in parallel and then merge the results to a final GeoTIFF:
 ```
-pdal_workbench density --input=hello.vrt --resolution=1 --output=density.tif
+pdal_workbench density --input=hello.vpc --resolution=1 --output=density.tif
 ```
 
 When algorithms create derived VPCs, by default they use uncompressed LAS, but `--output-format=laz` option can switch to compressed LAZ.
+
+## VPC support in algorithms
+
+| Algorithm | VPC | Notes |
+|--------------|-----------|--|
+| boundary | multi-threaded | |
+| density | multi-threaded | must not have overlaps |
+| clip | multi-threaded | |

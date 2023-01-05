@@ -12,6 +12,7 @@
 
 #include "utils.hpp"
 #include "alg.hpp"
+#include "vpc.hpp"
 
 using namespace pdal;
 
@@ -31,12 +32,14 @@ bool Boundary::checkArgs()
     return true;
 }
 
-void Boundary::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
 {
-    // TODO: how to deal parallel runs - create unions of boundary geometries of tiles? need some collars?
+    assert(tile);
+    assert(tile->inputFilenames.size() == 1);
 
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
-    Stage& r = manager->makeReader(inputFile, "");
+
+    Stage& r = manager->makeReader(tile->inputFilenames[0], "");
 
     // TODO: what edge size? (by default samples 5000 points if not specified
     // TODO: set threshold ? (default at least 16 points to keep the cell)
@@ -47,24 +50,53 @@ void Boundary::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& p
     hexbin_opts.add(pdal::Option("threshold", 0));
 
     Stage& w = manager->makeFilter( "filters.hexbin", r, hexbin_opts );
-
-    pipelines.push_back(std::move(manager));
+    return manager;
 }
 
-
-void Boundary::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
+void Boundary::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds)
 {
-    // extract boundary polygon
-    PipelineManager *pm = pipelines[0].get();
-    pdal::MetadataNode mn = pm->getMetadata();
+    if (ends_with(inputFile, ".vpc"))
+    {
+        // VPC handling
+        VirtualPointCloud vpc;
+        if (!vpc.read(inputFile))
+            return;
+
+        for (const VirtualPointCloud::File& f : vpc.files)
+        {
+            ParallelJobInfo tile;
+            tile.mode = ParallelJobInfo::FileBased;
+            tile.inputFilenames.push_back(f.filename);
+            pipelines.push_back(pipeline(&tile));
+        }
+    }
+    else
+    {
+        ParallelJobInfo tile;
+        tile.mode = ParallelJobInfo::Single;
+        tile.inputFilenames.push_back(inputFile);
+        pipelines.push_back(pipeline(&tile));
+    }
+}
+
+static std::string extractPolygon(PipelineManager &pipeline)
+{
+    pdal::MetadataNode mn = pipeline.getMetadata();
     //Utils::toJSON(mn, std::cout);
 
     pdal::MetadataNode hb = mn.findChild("filters.hexbin").findChild("boundary");
     //Utils::toJSON(hb, std::cout);
-    std::string wkt = hb.value();
+    return hb.value();
+}
 
-    // TODO: may be copc reader too...
-    std::string crs_wkt = mn.findChild("readers.las").findChild("spatialreference").value();
+void Boundary::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
+{
+    if (pipelines.empty())
+        return;
+
+    // TODO: may be copc reader too... we could get input's CRS from QuickInfo
+    PipelineManager *pm = pipelines[0].get();
+    std::string crs_wkt = pm->getMetadata().findChild("readers.las").findChild("spatialreference").value();
 
     GDALAllRegister();
 
@@ -72,7 +104,7 @@ void Boundary::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines
     hSrs = OSRNewSpatialReference(crs_wkt.c_str());
     assert(hSrs);
 
-    OGRwkbGeometryType wkbType = wkt.find("MULTI") == std::string::npos ? wkbPolygon : wkbMultiPolygon;
+    OGRwkbGeometryType wkbType = /*wkt.find("MULTI") == std::string::npos ? wkbPolygon :*/ wkbMultiPolygon;
 
     OGRSFDriverH hDriver = OGRGetDriverByName("GPKG");
     if (hDriver == nullptr)
@@ -95,22 +127,32 @@ void Boundary::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines
         return;
     }
 
-    OGRGeometryH geom;
-    char *wkt_ptr = wkt.data();
-    if (OGR_G_CreateFromWkt(&wkt_ptr, hSrs, &geom) != OGRERR_NONE)
+    // TODO: to a union of boundary polygons
+
+    for (auto& pipePtr : pipelines)
     {
-        std::cout << "Failed to parse geometry: " << wkt << std::endl;
-        return;
-    }
-    OGRFeatureH hFeature = OGR_F_Create(OGR_L_GetLayerDefn(hLayer));
-    OGR_F_SetGeometry(hFeature, geom);
-    if (OGR_L_CreateFeature(hLayer, hFeature) != OGRERR_NONE)
-    {
-        std::cout << "failed to create a new feature in the output file!" << std::endl;
-        return;
+        // extract boundary polygon
+        std::string wkt = extractPolygon(*pipePtr.get());
+
+        OGRGeometryH geom;
+        char *wkt_ptr = wkt.data();
+        if (OGR_G_CreateFromWkt(&wkt_ptr, hSrs, &geom) != OGRERR_NONE)
+        {
+            std::cout << "Failed to parse geometry: " << wkt << std::endl;
+        }
+        OGRFeatureH hFeature = OGR_F_Create(OGR_L_GetLayerDefn(hLayer));
+        if (OGR_F_SetGeometry(hFeature, geom) != OGRERR_NONE)
+        {
+            std::cout << "couldn't set geometry " << wkt << std::endl;
+        }
+        if (OGR_L_CreateFeature(hLayer, hFeature) != OGRERR_NONE)
+        {
+            std::cout << "failed to create a new feature in the output file!" << std::endl;
+        }
+
+        OGR_F_Destroy(hFeature);
     }
 
-    OGR_F_Destroy(hFeature);
     OSRDestroySpatialReference(hSrs);
     GDALClose(hDS);
 }

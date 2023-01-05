@@ -145,7 +145,6 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
 
         // TODO: adjust total number of points based on skipped files
 
-        int i = 0;
         for (const VirtualPointCloud::File& f : vpc.files)
         {
             if (!bbox.overlaps(f.bbox.to2d()))

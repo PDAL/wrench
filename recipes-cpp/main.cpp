@@ -1,10 +1,8 @@
 
 /*
 TODO:
-- naming scheme when producing outputs from parallel jobs
-- boundary: parallel run
 - algs that output point cloud: support multi-copc or single-copc output - as a post-processing step?
-- VPC: overlapping files?
+- VPC: overlapping files? do not allow - require tiling
 */
 
 #include <iostream>
@@ -31,7 +29,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> args;
     for ( int i = 2; i < argc; ++i )
         args.push_back(argv[i]);
-#elif 1
+#elif 0
     std::string cmd = "density";
     std::vector<std::string> args;
     // args.push_back("-i");
@@ -86,13 +84,18 @@ int main(int argc, char* argv[])
     args.push_back("--output=/tmp/tatry-clipped.vpc");
     //args.push_back("--output-format=laz");
 
-#else
+#elif 0
     std::string cmd = "density";
     std::vector<std::string> args;
     args.push_back("--input=/tmp/first.vpc");
     args.push_back("--output=/tmp/first.tif");
     args.push_back("--resolution=1");
     args.push_back("--threads=4");
+#else
+    std::string cmd = "boundary";
+    std::vector<std::string> args;
+    args.push_back("--input=/tmp/tatry-9.vpc");
+    args.push_back("--output=/tmp/tatry-9-boundary.gpkg");
 #endif
 
     std::cout << "command: " << cmd << std::endl;
