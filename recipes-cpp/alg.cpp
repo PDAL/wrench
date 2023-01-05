@@ -20,24 +20,27 @@ bool runStreamingAlg(std::vector<std::string> args, StreamingAlg &alg)
     point_count_t totalPoints = 0;
     BOX3D bounds;
 
-    if (ends_with(alg.inputFile, ".vpc"))
+    if (alg.hasSingleInput)
     {
-        VirtualPointCloud vpc;
-        if (!vpc.read(alg.inputFile))
-            return false;
-        totalPoints = vpc.totalPoints();
-        bounds = vpc.box3d();
-    }
-    else
-    {
-        QuickInfo qi = getQuickInfo(alg.inputFile);
-        totalPoints = qi.m_pointCount;
-        bounds = qi.m_bounds;
+        if (ends_with(alg.inputFile, ".vpc"))
+        {
+            VirtualPointCloud vpc;
+            if (!vpc.read(alg.inputFile))
+                return false;
+            totalPoints = vpc.totalPoints();
+            bounds = vpc.box3d();
+        }
+        else
+        {
+            QuickInfo qi = getQuickInfo(alg.inputFile);
+            totalPoints = qi.m_pointCount;
+            bounds = qi.m_bounds;
+        }
     }
 
     std::vector<std::unique_ptr<PipelineManager>> pipelines;
 
-    alg.preparePipelines(pipelines, bounds);
+    alg.preparePipelines(pipelines, bounds, totalPoints);
 
     if (pipelines.empty())
         return false;
@@ -52,7 +55,11 @@ bool runStreamingAlg(std::vector<std::string> args, StreamingAlg &alg)
 
 bool StreamingAlg::parseArgs(std::vector<std::string> args)
 { 
-    pdal::Arg& argInput = programArgs.add("input,i", "Input point cloud file", inputFile);
+    pdal::Arg* argInput = nullptr;
+    if (hasSingleInput)
+    {
+        argInput = &programArgs.add("input,i", "Input point cloud file", inputFile);
+    }
     addArgs();  // impl in derived
 
     // parallel run support (generic)
@@ -71,7 +78,7 @@ bool StreamingAlg::parseArgs(std::vector<std::string> args)
     }
 
     // TODO: ProgramArgs does not support required options
-    if (!argInput.set())
+    if (argInput && !argInput->set())
     {
         std::cerr << "missing input" << std::endl;
         return false;

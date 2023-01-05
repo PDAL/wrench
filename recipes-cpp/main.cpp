@@ -22,6 +22,7 @@ int main(int argc, char* argv[])
         std::cerr << " - clip" << std::endl;
         std::cerr << " - density" << std::endl;
         std::cerr << " - build_vpc" << std::endl;
+        std::cerr << " - merge" << std::endl;
         return 1;
     }
     std::string cmd = argv[1];
@@ -91,11 +92,17 @@ int main(int argc, char* argv[])
     args.push_back("--output=/tmp/first.tif");
     args.push_back("--resolution=1");
     args.push_back("--threads=4");
-#else
+#elif 0
     std::string cmd = "boundary";
     std::vector<std::string> args;
     args.push_back("--input=/tmp/tatry-9.vpc");
     args.push_back("--output=/tmp/tatry-9-boundary.gpkg");
+#else
+    std::string cmd = "merge";
+    std::vector<std::string> args;
+    args.push_back("--output=/tmp/merged.las");
+    args.push_back("/home/martin/qgis/point-cloud-sandbox/data/trencin-2-ground.laz");
+    args.push_back("/home/martin/qgis/point-cloud-sandbox/data/trencin-6-buildings.laz");
 #endif
 
     std::cout << "command: " << cmd << std::endl;
@@ -118,6 +125,11 @@ int main(int argc, char* argv[])
     else if (cmd == "build_vpc")
     {
         buildVpc(args);
+    }
+    else if (cmd == "merge")
+    {
+        Merge merge;
+        runStreamingAlg(args, merge);
     }
     else
     {

@@ -118,7 +118,7 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pd
 }
 
 
-void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds)
+void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints)
 {
     pdal::Options crop_opts;
     BOX2D bbox;
@@ -143,12 +143,11 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
         if (!vpc.read(inputFile))
             return;
 
-        // TODO: adjust total number of points based on skipped files
-
         for (const VirtualPointCloud::File& f : vpc.files)
         {
             if (!bbox.overlaps(f.bbox.to2d()))
             {
+                totalPoints -= f.count;
                 //std::cout << "skipping " << f.filename << std::endl;
                 continue;  // we can safely skip
             }

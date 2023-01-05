@@ -16,6 +16,7 @@ struct StreamingAlg
     double tile_size = 1000;
 
     // all algs should have some input...
+    bool hasSingleInput = true;   // some algs need multiple inputs - they should set this flag to false
     std::string inputFile;
 
     pdal::ProgramArgs programArgs;
@@ -31,7 +32,7 @@ struct StreamingAlg
     // interface
     virtual void addArgs() = 0;
     virtual bool checkArgs() = 0;
-    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds) = 0;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) = 0;
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) {};
 };
 
@@ -56,7 +57,7 @@ struct Density : public StreamingAlg
     // impl
     virtual void addArgs() override;
     virtual bool checkArgs() override;
-    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds) override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 
     // new
@@ -75,7 +76,7 @@ struct Boundary : public StreamingAlg
     // impl
     virtual void addArgs() override;
     virtual bool checkArgs() override;
-    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds) override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 
 };
@@ -98,9 +99,29 @@ struct Clip : public StreamingAlg
     // impl
     virtual void addArgs() override;
     virtual bool checkArgs() override;
-    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds) override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 
     // new
     //std::unique_ptr<PipelineManager> pipeline(ParallelTileInfo *tile, const pdal::Options &crop_opts) const;
+};
+
+
+struct Merge : public StreamingAlg
+{
+
+    // parameters from the user
+    std::string outputFile;
+    std::vector<std::string> inputFiles;
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+
+    Merge() { hasSingleInput = false; }
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
+
 };

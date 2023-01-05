@@ -48,6 +48,12 @@ QuickInfo getQuickInfo(std::string inputFile)
 {
     // TODO: handle the case when driver is not inferred
     std::string driver = StageFactory::inferReaderDriver(inputFile);
+    if (driver.empty())
+    {
+        std::cout << "cannot infer driver for: " << inputFile << std::endl;
+        return QuickInfo();
+    }
+
     StageFactory factory;
     Stage *reader = factory.createStage(driver);  // reader is owned by the factory
     pdal::Options opts;

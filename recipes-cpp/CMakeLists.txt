@@ -14,6 +14,7 @@ add_executable(pdal_workbench
     boundary.cpp
     clip.cpp
     density.cpp
+    merge.cpp
     utils.cpp
     vpc.cpp
     #MyThreadPool.cpp
