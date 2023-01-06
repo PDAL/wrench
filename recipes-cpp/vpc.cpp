@@ -201,3 +201,24 @@ BOX3D VirtualPointCloud::box3d() const
         b.grow(f.bbox);
     return b;
 }
+
+// compared to BOX2D::overlaps(), this one excludes the
+// maxx/maxy coords from the box "a" - so it returns false
+// when "b" touches "a" at the top or right side.
+// this avoids including files from neighboring tiles.
+inline bool overlaps2(const BOX2D &a, const BOX2D &b)
+{
+    return a.minx <= b.maxx && a.maxx > b.minx &&
+            a.miny <= b.maxy && a.maxy > b.miny;
+}
+
+std::vector<VirtualPointCloud::File> VirtualPointCloud::overlappingBox2D(const BOX2D &box)
+{
+    std::vector<VirtualPointCloud::File> overlaps;
+    for (const File &f : files)
+    {
+        if (overlaps2(box, f.bbox.to2d()))
+            overlaps.push_back(f);
+    }
+    return overlaps;
+}

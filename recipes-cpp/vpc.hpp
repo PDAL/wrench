@@ -31,4 +31,7 @@ struct VirtualPointCloud
 
     point_count_t totalPoints() const;
     BOX3D box3d() const;
+
+    //! returns files that have bounding box overlapping the given bounding box
+    std::vector<File> overlappingBox2D(const BOX2D &box);
 };

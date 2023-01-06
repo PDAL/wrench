@@ -25,6 +25,14 @@ Outputs only points that are inside of the clipping polygons.
 pdal_workbench clip --input=data.las --polygon=clip.gpkg --output=data_clipped.las
 ```
 
+## merge
+
+Merges multiple point cloud files to a single one.
+
+```
+pdal_workbench merge --output=merged.las data1.las data2.las data3.las
+```
+
 # Virtual Point Clouds (VPC)
 
 This is similar to GDAL's VRT - a single file referring to other files that contain actual data. Software then may handle all data as a single dataset.
@@ -53,3 +61,4 @@ When algorithms create derived VPCs, by default they use uncompressed LAS, but `
 | boundary | multi-threaded | |
 | density | multi-threaded | must not have overlaps |
 | clip | multi-threaded | |
+| merge | not supported | |

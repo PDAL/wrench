@@ -5,6 +5,49 @@
 
 using namespace pdal;
 
+// tiling scheme containing tileCountX x tileCountY square tiles of tileSize x tileSize,
+// with lower-left corner of the tiling being at [tileStartX,tileStartY]
+struct Tiling
+{
+    int tileCountX;
+    int tileCountY;
+    double tileStartX;
+    double tileStartY;
+    double tileSize;
+
+    BOX2D boxAt(int ix, int iy) const
+    {
+        return BOX2D(tileStartX + tileSize*ix,
+                     tileStartY + tileSize*iy,
+                     tileStartX + tileSize*(ix+1),
+                     tileStartY + tileSize*(iy+1));
+    }
+};
+
+// specification that square tiles of tileSize x tileSize should be aligned:
+// so that all corners have coordinates [originX + N*tileSize, originY + M*tileSize]
+// where N,M are some integer values
+struct TileAlignment
+{
+    double originX;
+    double originY;
+    double tileSize;
+
+    // returns tiling that fully covers given bounding box, using this tile alignment
+    Tiling coverBounds(const BOX2D &box) const
+    {
+        Tiling t;
+        t.tileSize = tileSize;
+        double offsetX = fmod(originX, tileSize);
+        double offsetY = fmod(originY, tileSize);
+        t.tileStartX = floor((box.minx - offsetX)/tileSize)*tileSize + offsetX;
+        t.tileStartY = floor((box.miny - offsetY)/tileSize)*tileSize + offsetY;
+        t.tileCountX = ceil((box.maxx - t.tileStartX)/tileSize);
+        t.tileCountY = ceil((box.maxy - t.tileStartY)/tileSize);
+        return t;
+    }
+};
+
 struct ParallelJobInfo
 {
     enum ParallelMode {
@@ -12,6 +55,9 @@ struct ParallelJobInfo
         FileBased,   //!< each input file processed separately
         Spatial,     //!< using tiles - "box" should be used
     } mode;
+
+    ParallelJobInfo(ParallelMode m = Single): mode(m) {}
+    ParallelJobInfo(ParallelMode m, const BOX2D &b): mode(m), box(b) {}
 
     // what input point cloud files to read for a job
     std::vector<std::string> inputFilenames;

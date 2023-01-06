@@ -4,6 +4,8 @@
 #include <pdal/PipelineManager.hpp>
 #include <pdal/util/ProgramArgs.hpp>
 
+#include "utils.hpp"
+
 using namespace pdal;
 
 struct ParallelJobInfo;
@@ -13,7 +15,6 @@ struct StreamingAlg
 {
     // parallel runs (generic)
     int max_threads = -1;
-    double tile_size = 1000;
 
     // all algs should have some input...
     bool hasSingleInput = true;   // some algs need multiple inputs - they should set this flag to false
@@ -48,9 +49,18 @@ struct Density : public StreamingAlg
     std::string outputFile;
     double resolution = 0;
 
+    // tiling setup for parallel runs
+    TileAlignment tileAlignment;
+    // double tileSize = 1000;
+    // double tileOriginX = -1;
+    // double tileOriginY = -1;
+
     // args - initialized in addArgs()
     pdal::Arg* argOutput = nullptr;
     pdal::Arg* argRes = nullptr;
+    pdal::Arg* argTileSize = nullptr;
+    pdal::Arg* argTileOriginX = nullptr;
+    pdal::Arg* argTileOriginY = nullptr;
 
     std::vector<std::string> tileOutputFiles;
 

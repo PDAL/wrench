@@ -45,6 +45,8 @@ int main(int argc, char* argv[])
     args.push_back("--output=/tmp/densX.tif");
     args.push_back("--resolution=1");
     args.push_back("--tile-size=250");
+    args.push_back("--tile-origin-x=0");
+    args.push_back("--tile-origin-y=0");
     args.push_back("--threads=4");
 #elif 0
     std::string cmd = "boundary";
@@ -85,7 +87,7 @@ int main(int argc, char* argv[])
     args.push_back("--output=/tmp/tatry-clipped.vpc");
     //args.push_back("--output-format=laz");
 
-#elif 0
+#elif 1
     std::string cmd = "density";
     std::vector<std::string> args;
     args.push_back("--input=/tmp/first.vpc");

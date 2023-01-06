@@ -21,6 +21,9 @@ void Density::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
     argRes = &programArgs.add("resolution,r", "Resolution of the density grid", resolution);
+    argTileSize = &programArgs.add("tile-size", "Size of a tile for parallel runs", tileAlignment.tileSize);
+    argTileOriginX = &programArgs.add("tile-origin-x", "X origin of a tile for parallel runs", tileAlignment.originX);
+    argTileOriginY = &programArgs.add("tile-origin-y", "Y origin of a tile for parallel runs", tileAlignment.originY);
 }
 
 bool Density::checkArgs()
@@ -36,6 +39,17 @@ bool Density::checkArgs()
         return false;
     }
 
+    // TODO: not sure why ProgramArgs cleans the default value
+    if (!argTileSize->set())
+    {
+        tileAlignment.tileSize = 1000;
+    }
+
+    if (!argTileOriginX->set())
+        tileAlignment.originX = -1;
+    if (!argTileOriginY->set())
+        tileAlignment.originY = -1;
+
     return true;
 }
 
@@ -44,20 +58,26 @@ std::unique_ptr<PipelineManager> Density::pipeline(ParallelJobInfo *tile) const
 {
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
 
-    // TODO: extend to handle multiple readers
-    assert(tile->inputFilenames.size() == 1);
-
-    Stage& r = manager->makeReader(tile->inputFilenames[0], "");
+    std::vector<Stage*> readers;
+    for (const std::string &f : tile->inputFilenames)
+    {
+        readers.push_back(&manager->makeReader(f, ""));
+    }
 
     if (tile->mode == ParallelJobInfo::Spatial)
     {
-        // for parallel runs
-        assert(r.getName() == "readers.copc");
-
-        pdal::Options copc_opts;
-        copc_opts.add(pdal::Option("threads", 1));
-        copc_opts.add(pdal::Option("bounds", box_to_pdal_bounds(tile->box)));
-        r.addOptions(copc_opts);
+        for (Stage* reader : readers)
+        {
+            // with COPC files, we can also specify bounds at the reader
+            // that will only read the required parts of the file
+            if (reader->getName() == "readers.copc")
+            {
+                pdal::Options copc_opts;
+                copc_opts.add(pdal::Option("threads", 1));
+                copc_opts.add(pdal::Option("bounds", box_to_pdal_bounds(tile->box)));
+                reader->addOptions(copc_opts);
+            }
+        }
     }
 
     pdal::Options writer_opts;
@@ -75,17 +95,24 @@ std::unique_ptr<PipelineManager> Density::pipeline(ParallelJobInfo *tile) const
         // to avoid empty areas in resulting rasters
 
         BOX2D box2 = tile->box;
-        // fix tile size - TODO: not sure if this is the right thing to do
+        // fix tile size - PDAL's writers.gdal adds one pixel (see GDALWriter::createGrid()),
+        // because it probably expects that that the bounds and resolution do not perfectly match
         box2.maxx -= resolution;
         box2.maxy -= resolution;
+
         writer_opts.add(pdal::Option("bounds", box_to_pdal_bounds(box2)));
     }
 
     // TODO: "writers.gdal: Requested driver 'COG' does not support file creation.""
     //   writer_opts.add(pdal::Option("gdaldriver", "COG"));
 
-    pdal::StageCreationOptions opts{ tile->outputFilename, "", &r, writer_opts };
+    pdal::StageCreationOptions opts{ tile->outputFilename, "", nullptr, writer_opts };
     Stage& w = manager->makeWriter( opts );
+    for (Stage *stage : readers)
+    {
+        w.setInput(*stage);  // connect all readers to the writer
+    }
+
     return manager;
 }
 
@@ -94,11 +121,8 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
 {
     if (ends_with(inputFile, ".vpc"))
     {
-        // using per-file processing
+        // using spatial processing
 
-        // TODO: this assumes non-overlapping files - for overlapping we would need extra input files
-
-        // VPC handling
         VirtualPointCloud vpc;
         if (!vpc.read(inputFile))
             return;
@@ -108,24 +132,54 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
         fs::path outputSubdir = outputParentDir / fs::path(outputFile).stem();
         fs::create_directories(outputSubdir);
 
-        int i = 0;
-        for ( auto& f : vpc.files )
+        bool unalignedFiles = false;
+
+        // TODO: optionally adjust origin to have nicer numbers for bounds?
+        if (tileAlignment.originX == -1)
+            tileAlignment.originX = bounds.minx;
+        if (tileAlignment.originY == -1)
+            tileAlignment.originY = bounds.miny;
+
+        Tiling t = tileAlignment.coverBounds(bounds.to2d());
+        std::cout << "tiles " << t.tileCountX << " " << t.tileCountY << std::endl;
+
+        totalPoints = 0;  // we need to recalculate as we may use some points multiple times
+        for (int iy = 0; iy < t.tileCountY; ++iy)
         {
-            ParallelJobInfo tile;
-            tile.mode = ParallelJobInfo::FileBased;
-            tile.box = f.bbox.to2d();
-            tile.inputFilenames.push_back(f.filename);
+            for (int ix = 0; ix < t.tileCountX; ++ix)
+            {
+                BOX2D tileBox = t.boxAt(ix, iy);
 
-            // create temp output file names
+                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
+                for (const VirtualPointCloud::File & f: vpc.overlappingBox2D(tileBox))
+                {
+                    tile.inputFilenames.push_back(f.filename);
+                    totalPoints += f.count;
+                }
+                if (tile.inputFilenames.empty())
+                    continue;   // no input files for this tile
 
-            // for input file /x/y/z.las that goes to /tmp/hello.vpc,
-            // individual output file will be called /tmp/hello/z.las
-            fs::path inputBasename = fs::path(f.filename).stem();
-            tile.outputFilename = (outputSubdir / inputBasename).string() + ".tif";
+                if (tile.inputFilenames.size() > 1)
+                    unalignedFiles = true;
 
-            tileOutputFiles.push_back(tile.outputFilename);
+                // create temp output file names
+                // for tile (x=2,y=3) that goes to /tmp/hello.tif,
+                // individual output file will be called /tmp/hello/2_3.tif
+                fs::path inputBasename = std::to_string(ix) + "_" + std::to_string(iy);
+                tile.outputFilename = (outputSubdir / inputBasename).string() + ".tif";
 
-            pipelines.push_back(pipeline(&tile));
+                tileOutputFiles.push_back(tile.outputFilename);
+
+                pipelines.push_back(pipeline(&tile));
+            }
+        }
+
+        if (unalignedFiles)
+        {
+            std::cout << std::endl;
+            std::cout << "Warning: input files not perfectly aligned with tile grid - processing may take longer." << std::endl;
+            std::cout << "Consider using --tile-size, --tile-origin-x, --tile-origin-y arguments" << std::endl;
+            std::cout << std::endl;
         }
     }
     else if (ends_with(inputFile, ".copc.laz"))
@@ -137,29 +191,20 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
         fs::path outputSubdir = outputParentDir / fs::path(outputFile).stem();
         fs::create_directories(outputSubdir);
 
-        // TODO: optionally adjust xmin/ymin to have nice numbers?
+        if (tileAlignment.originX == -1)
+            tileAlignment.originX = bounds.minx;
+        if (tileAlignment.originY == -1)
+            tileAlignment.originY = bounds.miny;
 
-        double xmin = bounds.minx, ymin = bounds.miny;
-        double xmax = bounds.maxx, ymax = bounds.maxy;
+        Tiling t = tileAlignment.coverBounds(bounds.to2d());
 
-        int n_tiles_x = int(ceil((xmax-xmin)/tile_size));
-        int n_tiles_y = int(ceil((ymax-ymin)/tile_size));
-        std::cout << "tiles " << n_tiles_x << " " << n_tiles_y << std::endl;
-        std::vector<BOX2D> tile_bounds;
-
-        // TODO: fix tile bounds calculation - created 501 pixel tile instead of 500
-        // (probably writers.gdal needs precise bounds too)
-
-        for (int iy = 0; iy < n_tiles_y; ++iy)
+        for (int iy = 0; iy < t.tileCountY; ++iy)
         {
-            for (int ix = 0; ix < n_tiles_x; ++ix)
+            for (int ix = 0; ix < t.tileCountX; ++ix)
             {
-                ParallelJobInfo tile;
-                tile.mode = ParallelJobInfo::Spatial;
-                tile.box = BOX2D(xmin+tile_size*ix,
-                                ymin+tile_size*iy,
-                                xmin+tile_size*(ix+1),
-                                ymin+tile_size*(iy+1));
+                BOX2D tileBox = t.boxAt(ix, iy);
+
+                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
                 tile.inputFilenames.push_back(inputFile);
 
                 // create temp output file names
@@ -178,8 +223,7 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
     {
         // single input LAS/LAZ - no parallelism
 
-        ParallelJobInfo tile;
-        tile.mode = ParallelJobInfo::Single;
+        ParallelJobInfo tile(ParallelJobInfo::Single);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
         pipelines.push_back(pipeline(&tile));

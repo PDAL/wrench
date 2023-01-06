@@ -64,7 +64,6 @@ bool StreamingAlg::parseArgs(std::vector<std::string> args)
 
     // parallel run support (generic)
     pdal::Arg& argThreads = programArgs.add("threads", "Max number of concurrent threads for parallel runs", max_threads);
-    pdal::Arg& argTileSize = programArgs.add("tile-size", "Size of a tile for parallel runs", tile_size);
 
     try
     {
@@ -93,12 +92,6 @@ bool StreamingAlg::parseArgs(std::vector<std::string> args)
         for ( auto & a : args )
             std::cout << " - " << a << std::endl;
         return false;
-    }
-
-    // TODO: not sure why ProgramArgs cleans the default value
-    if (!argTileSize.set())
-    {
-        tile_size = 1000;
     }
 
     if (!argThreads.set())  // in such case our value is reset to zero
