@@ -58,7 +58,7 @@ When algorithms create derived VPCs, by default they use uncompressed LAS, but `
 
 | Algorithm | VPC | Notes |
 |--------------|-----------|--|
-| boundary | multi-threaded | |
-| density | multi-threaded | must not have overlaps |
-| clip | multi-threaded | |
+| boundary | multi-threaded | per file |
+| density | multi-threaded | spatial tiling |
+| clip | multi-threaded | per file |
 | merge | not supported | |

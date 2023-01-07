@@ -91,9 +91,6 @@ std::unique_ptr<PipelineManager> Density::pipeline(ParallelJobInfo *tile) const
 
     if (tile->box.valid())
     {
-        // TODO: for tiles that are smaller than full box - only use intersection
-        // to avoid empty areas in resulting rasters
-
         BOX2D box2 = tile->box;
         // fix tile size - PDAL's writers.gdal adds one pixel (see GDALWriter::createGrid()),
         // because it probably expects that that the bounds and resolution do not perfectly match
@@ -140,7 +137,14 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
         if (tileAlignment.originY == -1)
             tileAlignment.originY = bounds.miny;
 
-        Tiling t = tileAlignment.coverBounds(bounds.to2d());
+        // align bounding box of data to the grid
+        TileAlignment gridAlignment = tileAlignment;
+        gridAlignment.tileSize = resolution;
+        Tiling gridTiling = gridAlignment.coverBounds(bounds.to2d());
+        std::cout << "grid " << gridTiling.tileCountX << "x" << gridTiling.tileCountY << std::endl;
+        BOX2D gridBounds = gridTiling.fullBox();
+
+        Tiling t = tileAlignment.coverBounds(gridBounds);
         std::cout << "tiles " << t.tileCountX << " " << t.tileCountY << std::endl;
 
         totalPoints = 0;  // we need to recalculate as we may use some points multiple times
@@ -149,6 +153,10 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
             for (int ix = 0; ix < t.tileCountX; ++ix)
             {
                 BOX2D tileBox = t.boxAt(ix, iy);
+
+                // for tiles that are smaller than full box - only use intersection
+                // to avoid empty areas in resulting rasters
+                tileBox.clip(gridBounds);
 
                 ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
                 for (const VirtualPointCloud::File & f: vpc.overlappingBox2D(tileBox))

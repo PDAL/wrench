@@ -94,6 +94,10 @@ int main(int argc, char* argv[])
     args.push_back("--output=/tmp/first.tif");
     args.push_back("--resolution=1");
     args.push_back("--threads=4");
+    // for good alignment of input and output
+    args.push_back("--tile-origin-x=377250");
+    args.push_back("--tile-origin-y=5441420");
+
 #elif 0
     std::string cmd = "boundary";
     std::vector<std::string> args;

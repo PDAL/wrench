@@ -71,8 +71,7 @@ bool StreamingAlg::parseArgs(std::vector<std::string> args)
     }
     catch(pdal::arg_error err)
     {
-        // TODO
-        std::cerr << "uh oh" << std::endl;
+        std::cerr << "failed to parse arguments: " << err.what() << std::endl;
         return false;
     }
 

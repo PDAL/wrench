@@ -15,6 +15,14 @@ struct Tiling
     double tileStartY;
     double tileSize;
 
+    BOX2D fullBox() const
+    {
+        return BOX2D(tileStartX,
+                     tileStartY,
+                     tileStartX + tileSize * tileCountX,
+                     tileStartY + tileSize * tileCountY);
+    }
+
     BOX2D boxAt(int ix, int iy) const
     {
         return BOX2D(tileStartX + tileSize*ix,
