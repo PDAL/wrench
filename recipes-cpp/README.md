@@ -33,6 +33,31 @@ Merges multiple point cloud files to a single one.
 pdal_workbench merge --output=merged.las data1.las data2.las data3.las
 ```
 
+## thin
+
+Creates a thinned version of the point cloud by only keeping every N-th point. This will only keep every 20th point, so only 5% of points will be in the output:
+
+```
+pdal_workbench thin --output=thinned.las --step=20 data.las
+```
+
+## to_raster
+
+Exports point cloud data to a 2D raster grid, having cell size of given resolution, writing values from the specified attribute. Uses inverse distance weighting.
+
+```
+pdal_workbench to_raster --output=raster.tif --resolution=1 --attribute=Z data.las
+```
+
+## to_raster_tin
+
+Exports point cloud data to a 2D raster grid like `to_raster` does, but using a triangulation of points and then interpolating cell values from triangles. It does not produce any "holes" when some data are missing. Only supports output of Z attribute.
+
+```
+pdal_workbench to_raster_tin --output=raster.tif --resolution=1 data.las
+```
+
+
 # Virtual Point Clouds (VPC)
 
 This is similar to GDAL's VRT - a single file referring to other files that contain actual data. Software then may handle all data as a single dataset.
@@ -62,3 +87,6 @@ When algorithms create derived VPCs, by default they use uncompressed LAS, but `
 | density | multi-threaded | spatial tiling |
 | clip | multi-threaded | per file |
 | merge | not supported | |
+| thin | multi-threaded | per file |
+| to_raster | multi-threaded | spatial tiling |
+| to_raster_tin | multi-threaded | spatial tiling |
