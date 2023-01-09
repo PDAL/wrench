@@ -23,6 +23,8 @@ int main(int argc, char* argv[])
         std::cerr << " - density" << std::endl;
         std::cerr << " - build_vpc" << std::endl;
         std::cerr << " - merge" << std::endl;
+        std::cerr << " - to_raster" << std::endl;
+        std::cerr << " - to_raster_tin" << std::endl;
         return 1;
     }
     std::string cmd = argv[1];
@@ -87,7 +89,7 @@ int main(int argc, char* argv[])
     args.push_back("--output=/tmp/tatry-clipped.vpc");
     //args.push_back("--output-format=laz");
 
-#elif 1
+#elif 0
     std::string cmd = "density";
     std::vector<std::string> args;
     args.push_back("--input=/tmp/first.vpc");
@@ -103,12 +105,45 @@ int main(int argc, char* argv[])
     std::vector<std::string> args;
     args.push_back("--input=/tmp/tatry-9.vpc");
     args.push_back("--output=/tmp/tatry-9-boundary.gpkg");
-#else
+#elif 0
     std::string cmd = "merge";
     std::vector<std::string> args;
     args.push_back("--output=/tmp/merged.las");
     args.push_back("/home/martin/qgis/point-cloud-sandbox/data/trencin-2-ground.laz");
     args.push_back("/home/martin/qgis/point-cloud-sandbox/data/trencin-6-buildings.laz");
+#elif 0
+    std::string cmd = "to_raster_tin";
+    std::vector<std::string> args;
+    args.push_back("--input=/home/martin/qgis/point-cloud-sandbox/data/trencin-2-ground.laz");
+    args.push_back("--output=/tmp/raster_tin.tif");
+    args.push_back("--resolution=1");
+#elif 1
+    std::string cmd = "to_raster";
+    std::vector<std::string> args;
+
+    args.push_back("--input=/tmp/first.vpc");
+    args.push_back("--output=/tmp/first-dem.tif");
+    args.push_back("--resolution=1");
+#else
+    std::string cmd = "to_raster_tin";
+    std::vector<std::string> args;
+
+    // args.push_back("--input=/home/martin/qgis/point-cloud-sandbox/data/merged.copc.laz");
+    // args.push_back("--output=/tmp/merged-tin.tif");
+    // args.push_back("--resolution=1");
+    // args.push_back("--tile-size=250");
+    // args.push_back("--tile-origin-x=0");
+    // args.push_back("--tile-origin-y=0");
+    // args.push_back("--threads=1");
+
+    args.push_back("--input=/tmp/first.vpc");
+    args.push_back("--output=/tmp/first-tin.tif");
+    args.push_back("--resolution=1");
+    args.push_back("--threads=1");
+    args.push_back("--tile-size=500");
+    // for good alignment of input and output
+    args.push_back("--tile-origin-x=377250");
+    args.push_back("--tile-origin-y=5441420");
 #endif
 
     std::cout << "command: " << cmd << std::endl;
@@ -116,17 +151,17 @@ int main(int argc, char* argv[])
     if (cmd == "density")
     {
         Density density;
-        runStreamingAlg(args, density);
+        runAlg(args, density);
     }
     else if (cmd == "boundary")
     {
         Boundary boundary;
-        runStreamingAlg(args, boundary);
+        runAlg(args, boundary);
     }
     else if (cmd == "clip")
     {
         Clip clip;
-        runStreamingAlg(args, clip);
+        runAlg(args, clip);
     }
     else if (cmd == "build_vpc")
     {
@@ -135,7 +170,17 @@ int main(int argc, char* argv[])
     else if (cmd == "merge")
     {
         Merge merge;
-        runStreamingAlg(args, merge);
+        runAlg(args, merge);
+    }
+    else if (cmd == "to_raster")
+    {
+        ToRaster toRaster;
+        runAlg(args, toRaster);
+    }
+    else if (cmd == "to_raster_tin")
+    {
+        ToRasterTin toRasterTin;
+        runAlg(args, toRasterTin);
     }
     else
     {

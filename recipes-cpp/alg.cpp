@@ -11,7 +11,7 @@
 using namespace pdal;
 
 
-bool runStreamingAlg(std::vector<std::string> args, StreamingAlg &alg)
+bool runAlg(std::vector<std::string> args, Alg &alg)
 {
 
     if ( !alg.parseArgs(args) )
@@ -45,7 +45,7 @@ bool runStreamingAlg(std::vector<std::string> args, StreamingAlg &alg)
     if (pipelines.empty())
         return false;
 
-    runPipelineParallel(totalPoints, pipelines, alg.max_threads);
+    runPipelineParallel(totalPoints, alg.isStreaming, pipelines, alg.max_threads);
 
     alg.finalize(pipelines);
 
@@ -53,7 +53,7 @@ bool runStreamingAlg(std::vector<std::string> args, StreamingAlg &alg)
 }
 
 
-bool StreamingAlg::parseArgs(std::vector<std::string> args)
+bool Alg::parseArgs(std::vector<std::string> args)
 { 
     pdal::Arg* argInput = nullptr;
     if (hasSingleInput)

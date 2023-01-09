@@ -11,10 +11,12 @@ using namespace pdal;
 struct ParallelJobInfo;
 
 
-struct StreamingAlg
+struct Alg
 {
     // parallel runs (generic)
     int max_threads = -1;
+
+    bool isStreaming = true;
 
     // all algs should have some input...
     bool hasSingleInput = true;   // some algs need multiple inputs - they should set this flag to false
@@ -22,11 +24,11 @@ struct StreamingAlg
 
     pdal::ProgramArgs programArgs;
 
-    StreamingAlg() = default;
+    Alg() = default;
 
     // no copying
-    StreamingAlg(const StreamingAlg &other) = delete;
-    StreamingAlg& operator=(const StreamingAlg &other) = delete;
+    Alg(const Alg &other) = delete;
+    Alg& operator=(const Alg &other) = delete;
 
     bool parseArgs(std::vector<std::string> args);
 
@@ -37,13 +39,13 @@ struct StreamingAlg
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) {};
 };
 
-bool runStreamingAlg(std::vector<std::string> args, StreamingAlg &alg);
+bool runAlg(std::vector<std::string> args, Alg &alg);
 
 
 //////////////
 
 
-struct Density : public StreamingAlg
+struct Density : public Alg
 {
     // parameters from the user
     std::string outputFile;
@@ -51,9 +53,6 @@ struct Density : public StreamingAlg
 
     // tiling setup for parallel runs
     TileAlignment tileAlignment;
-    // double tileSize = 1000;
-    // double tileOriginX = -1;
-    // double tileOriginY = -1;
 
     // args - initialized in addArgs()
     pdal::Arg* argOutput = nullptr;
@@ -75,7 +74,7 @@ struct Density : public StreamingAlg
 };
 
 
-struct Boundary : public StreamingAlg
+struct Boundary : public Alg
 {
     // parameters from the user
     std::string outputFile;
@@ -92,7 +91,7 @@ struct Boundary : public StreamingAlg
 };
 
 
-struct Clip : public StreamingAlg
+struct Clip : public Alg
 {
     // parameters from the user
     std::string outputFile;
@@ -117,7 +116,7 @@ struct Clip : public StreamingAlg
 };
 
 
-struct Merge : public StreamingAlg
+struct Merge : public Alg
 {
 
     // parameters from the user
@@ -134,4 +133,62 @@ struct Merge : public StreamingAlg
     virtual bool checkArgs() override;
     virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
 
+};
+
+
+struct ToRaster : public Alg
+{
+    // parameters from the user
+    std::string outputFile;
+    double resolution = 0;
+    std::string attribute;
+    double collarSize = 0;
+
+    // tiling setup for parallel runs
+    TileAlignment tileAlignment;
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argRes = nullptr;
+    pdal::Arg* argAttribute = nullptr;
+    pdal::Arg* argTileSize = nullptr;
+    pdal::Arg* argTileOriginX = nullptr;
+    pdal::Arg* argTileOriginY = nullptr;
+
+    std::vector<std::string> tileOutputFiles;
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};
+
+
+struct ToRasterTin : public Alg
+{
+    // parameters from the user
+    std::string outputFile;
+    double resolution = 0;
+    double collarSize = 0;
+
+    // tiling setup for parallel runs
+    TileAlignment tileAlignment;
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argRes = nullptr;
+    pdal::Arg* argTileSize = nullptr;
+    pdal::Arg* argTileOriginX = nullptr;
+    pdal::Arg* argTileOriginY = nullptr;
+
+    std::vector<std::string> tileOutputFiles;
+
+    ToRasterTin() { isStreaming = false; }
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 };

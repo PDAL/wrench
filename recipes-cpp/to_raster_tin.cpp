@@ -15,7 +15,13 @@ using namespace pdal;
 
 namespace fs = std::filesystem;
 
-void Density::addArgs()
+/*
+memory requirements to keep in mind:
+- delaunator-cpp: 136 bytes per point -> 10M pts ~ 1.36 GB
+- mesh in pdal: 48 bytes per point -> 10M pts ~ 0.5 GB
+*/
+
+void ToRasterTin::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
     argRes = &programArgs.add("resolution,r", "Resolution of the density grid", resolution);
@@ -24,7 +30,7 @@ void Density::addArgs()
     argTileOriginY = &programArgs.add("tile-origin-y", "Y origin of a tile for parallel runs", tileAlignment.originY);
 }
 
-bool Density::checkArgs()
+bool ToRasterTin::checkArgs()
 {
     if (!argOutput->set())
     {
@@ -37,7 +43,6 @@ bool Density::checkArgs()
         return false;
     }
 
-    // TODO: not sure why ProgramArgs cleans the default value
     if (!argTileSize->set())
     {
         tileAlignment.tileSize = 1000;
@@ -48,11 +53,13 @@ bool Density::checkArgs()
     if (!argTileOriginY->set())
         tileAlignment.originY = -1;
 
+    collarSize = resolution*10;  // what's the right collar size?
+
     return true;
 }
 
 
-std::unique_ptr<PipelineManager> Density::pipeline(ParallelJobInfo *tile) const
+std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, double resolution)
 {
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
 
@@ -72,47 +79,42 @@ std::unique_ptr<PipelineManager> Density::pipeline(ParallelJobInfo *tile) const
             {
                 pdal::Options copc_opts;
                 copc_opts.add(pdal::Option("threads", 1));
-                copc_opts.add(pdal::Option("bounds", box_to_pdal_bounds(tile->box)));
+                copc_opts.add(pdal::Option("bounds", box_to_pdal_bounds(tile->boxWithCollar)));
                 reader->addOptions(copc_opts);
             }
         }
     }
 
-    pdal::Options writer_opts;
-    writer_opts.add(pdal::Option("binmode", true));
-    writer_opts.add(pdal::Option("output_type", "count"));
-    writer_opts.add(pdal::Option("resolution", resolution));
-
-    writer_opts.add(pdal::Option("data_type", "int16"));  // 16k points in a cell should be enough? :)
-    writer_opts.add(pdal::Option("gdalopts", "TILED=YES"));
-    writer_opts.add(pdal::Option("gdalopts", "COMPRESS=DEFLATE"));
-
-    if (tile->box.valid())
-    {
-        BOX2D box2 = tile->box;
-        // fix tile size - PDAL's writers.gdal adds one pixel (see GDALWriter::createGrid()),
-        // because it probably expects that that the bounds and resolution do not perfectly match
-        box2.maxx -= resolution;
-        box2.maxy -= resolution;
-
-        writer_opts.add(pdal::Option("bounds", box_to_pdal_bounds(box2)));
-    }
-
-    // TODO: "writers.gdal: Requested driver 'COG' does not support file creation.""
-    //   writer_opts.add(pdal::Option("gdaldriver", "COG"));
-
-    pdal::StageCreationOptions opts{ tile->outputFilename, "", nullptr, writer_opts };
-    Stage& w = manager->makeWriter( opts );
+    Stage &delaunay = manager->makeFilter("filters.delaunay");
     for (Stage *stage : readers)
     {
-        w.setInput(*stage);  // connect all readers to the writer
+        delaunay.setInput(*stage);  // connect all readers to the writer
     }
+
+    pdal::Options faceRaster_opts;
+    faceRaster_opts.add(pdal::Option("resolution", resolution));
+
+    if (tile->box.valid())  // if box is not provided, filters.faceraster will calculate it from data
+    {
+        faceRaster_opts.add(pdal::Option("origin_x", tile->box.minx));
+        faceRaster_opts.add(pdal::Option("origin_y", tile->box.miny));
+        faceRaster_opts.add(pdal::Option("width", (tile->box.maxx-tile->box.minx)/resolution));
+        faceRaster_opts.add(pdal::Option("height", (tile->box.maxy-tile->box.miny)/resolution));
+    }
+
+    Stage &faceRaster = manager->makeFilter("filters.faceraster", delaunay, faceRaster_opts);
+
+    pdal::Options writer_opts;
+    writer_opts.add(pdal::Option("data_type", "float32"));  // default was float64 which seems like too much
+    writer_opts.add(pdal::Option("gdalopts", "TILED=YES"));
+    writer_opts.add(pdal::Option("gdalopts", "COMPRESS=DEFLATE"));
+    Stage &w = manager->makeWriter(tile->outputFilename, "writers.raster", faceRaster);
 
     return manager;
 }
 
 
-void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints)
+void ToRasterTin::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints)
 {
     if (ends_with(inputFile, ".vpc"))
     {
@@ -126,8 +128,6 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
         fs::path outputParentDir = fs::path(outputFile).parent_path();
         fs::path outputSubdir = outputParentDir / fs::path(outputFile).stem();
         fs::create_directories(outputSubdir);
-
-        bool unalignedFiles = false;
 
         // TODO: optionally adjust origin to have nicer numbers for bounds?
         if (tileAlignment.originX == -1)
@@ -157,16 +157,18 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
                 tileBox.clip(gridBounds);
 
                 ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
-                for (const VirtualPointCloud::File & f: vpc.overlappingBox2D(tileBox))
+
+                // add collar to avoid edge effects
+                tile.boxWithCollar = tileBox;
+                tile.boxWithCollar.grow(collarSize);
+
+                for (const VirtualPointCloud::File & f: vpc.overlappingBox2D(tile.boxWithCollar))
                 {
                     tile.inputFilenames.push_back(f.filename);
                     totalPoints += f.count;
                 }
                 if (tile.inputFilenames.empty())
                     continue;   // no input files for this tile
-
-                if (tile.inputFilenames.size() > 1)
-                    unalignedFiles = true;
 
                 // create temp output file names
                 // for tile (x=2,y=3) that goes to /tmp/hello.tif,
@@ -176,16 +178,8 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
 
                 tileOutputFiles.push_back(tile.outputFilename);
 
-                pipelines.push_back(pipeline(&tile));
+                pipelines.push_back(pipeline(&tile, resolution));
             }
-        }
-
-        if (unalignedFiles)
-        {
-            std::cout << std::endl;
-            std::cout << "Warning: input files not perfectly aligned with tile grid - processing may take longer." << std::endl;
-            std::cout << "Consider using --tile-size, --tile-origin-x, --tile-origin-y arguments" << std::endl;
-            std::cout << std::endl;
         }
     }
     else if (ends_with(inputFile, ".copc.laz"))
@@ -221,24 +215,20 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
 
                 tileOutputFiles.push_back(tile.outputFilename);
 
-                pipelines.push_back(pipeline(&tile));
+                pipelines.push_back(pipeline(&tile, resolution));
             }
         }
     }
     else
     {
-        // single input LAS/LAZ - no parallelism
-
         ParallelJobInfo tile(ParallelJobInfo::Single);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
-        pipelines.push_back(pipeline(&tile));
+        pipelines.push_back(pipeline(&tile, resolution));
     }
-
 }
 
-
-void Density::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
+void ToRasterTin::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
 {
     if (pipelines.size() > 1)
     {

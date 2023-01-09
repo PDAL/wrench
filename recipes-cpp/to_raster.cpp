@@ -15,16 +15,20 @@ using namespace pdal;
 
 namespace fs = std::filesystem;
 
-void Density::addArgs()
+void ToRaster::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
     argRes = &programArgs.add("resolution,r", "Resolution of the density grid", resolution);
+    argAttribute = &programArgs.add("attribute,a", "Attribute for output", attribute);
+
+    // TODO: add support for window_size / fill holes
+
     argTileSize = &programArgs.add("tile-size", "Size of a tile for parallel runs", tileAlignment.tileSize);
     argTileOriginX = &programArgs.add("tile-origin-x", "X origin of a tile for parallel runs", tileAlignment.originX);
     argTileOriginY = &programArgs.add("tile-origin-y", "Y origin of a tile for parallel runs", tileAlignment.originY);
 }
 
-bool Density::checkArgs()
+bool ToRaster::checkArgs()
 {
     if (!argOutput->set())
     {
@@ -36,8 +40,13 @@ bool Density::checkArgs()
         std::cerr << "missing resolution" << std::endl;
         return false;
     }
+    if (!argAttribute->set())
+    {
+        attribute = "Z";
+    }
 
-    // TODO: not sure why ProgramArgs cleans the default value
+    // TODO: check that the attribute exists?
+
     if (!argTileSize->set())
     {
         tileAlignment.tileSize = 1000;
@@ -48,11 +57,13 @@ bool Density::checkArgs()
     if (!argTileOriginY->set())
         tileAlignment.originY = -1;
 
+    collarSize = resolution*10;  // what's the right collar size?
+
     return true;
 }
 
 
-std::unique_ptr<PipelineManager> Density::pipeline(ParallelJobInfo *tile) const
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, double resolution, std::string attribute)
 {
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
 
@@ -72,18 +83,18 @@ std::unique_ptr<PipelineManager> Density::pipeline(ParallelJobInfo *tile) const
             {
                 pdal::Options copc_opts;
                 copc_opts.add(pdal::Option("threads", 1));
-                copc_opts.add(pdal::Option("bounds", box_to_pdal_bounds(tile->box)));
+                copc_opts.add(pdal::Option("bounds", box_to_pdal_bounds(tile->boxWithCollar)));
                 reader->addOptions(copc_opts);
             }
         }
     }
 
     pdal::Options writer_opts;
-    writer_opts.add(pdal::Option("binmode", true));
-    writer_opts.add(pdal::Option("output_type", "count"));
+    writer_opts.add(pdal::Option("output_type", "idw"));  // TODO: other outputs like min/max/mean as well?
+    writer_opts.add(pdal::Option("dimension", attribute));
     writer_opts.add(pdal::Option("resolution", resolution));
 
-    writer_opts.add(pdal::Option("data_type", "int16"));  // 16k points in a cell should be enough? :)
+    writer_opts.add(pdal::Option("data_type", "float32"));
     writer_opts.add(pdal::Option("gdalopts", "TILED=YES"));
     writer_opts.add(pdal::Option("gdalopts", "COMPRESS=DEFLATE"));
 
@@ -112,7 +123,7 @@ std::unique_ptr<PipelineManager> Density::pipeline(ParallelJobInfo *tile) const
 }
 
 
-void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints)
+void ToRaster::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints)
 {
     if (ends_with(inputFile, ".vpc"))
     {
@@ -126,8 +137,6 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
         fs::path outputParentDir = fs::path(outputFile).parent_path();
         fs::path outputSubdir = outputParentDir / fs::path(outputFile).stem();
         fs::create_directories(outputSubdir);
-
-        bool unalignedFiles = false;
 
         // TODO: optionally adjust origin to have nicer numbers for bounds?
         if (tileAlignment.originX == -1)
@@ -157,16 +166,18 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
                 tileBox.clip(gridBounds);
 
                 ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
-                for (const VirtualPointCloud::File & f: vpc.overlappingBox2D(tileBox))
+
+                // add collar to avoid edge effects
+                tile.boxWithCollar = tileBox;
+                tile.boxWithCollar.grow(collarSize);
+
+                for (const VirtualPointCloud::File & f: vpc.overlappingBox2D(tile.boxWithCollar))
                 {
                     tile.inputFilenames.push_back(f.filename);
                     totalPoints += f.count;
                 }
                 if (tile.inputFilenames.empty())
                     continue;   // no input files for this tile
-
-                if (tile.inputFilenames.size() > 1)
-                    unalignedFiles = true;
 
                 // create temp output file names
                 // for tile (x=2,y=3) that goes to /tmp/hello.tif,
@@ -176,16 +187,8 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
 
                 tileOutputFiles.push_back(tile.outputFilename);
 
-                pipelines.push_back(pipeline(&tile));
+                pipelines.push_back(pipeline(&tile, resolution, attribute));
             }
-        }
-
-        if (unalignedFiles)
-        {
-            std::cout << std::endl;
-            std::cout << "Warning: input files not perfectly aligned with tile grid - processing may take longer." << std::endl;
-            std::cout << "Consider using --tile-size, --tile-origin-x, --tile-origin-y arguments" << std::endl;
-            std::cout << std::endl;
         }
     }
     else if (ends_with(inputFile, ".copc.laz"))
@@ -213,6 +216,10 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
                 ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
                 tile.inputFilenames.push_back(inputFile);
 
+                // add collar to avoid edge effects
+                tile.boxWithCollar = tileBox;
+                tile.boxWithCollar.grow(collarSize);
+
                 // create temp output file names
                 // for tile (x=2,y=3) that goes to /tmp/hello.tif,
                 // individual output file will be called /tmp/hello/2_3.tif
@@ -221,7 +228,7 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
 
                 tileOutputFiles.push_back(tile.outputFilename);
 
-                pipelines.push_back(pipeline(&tile));
+                pipelines.push_back(pipeline(&tile, resolution, attribute));
             }
         }
     }
@@ -232,13 +239,13 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
         ParallelJobInfo tile(ParallelJobInfo::Single);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
-        pipelines.push_back(pipeline(&tile));
+        pipelines.push_back(pipeline(&tile, resolution, attribute));
     }
 
 }
 
 
-void Density::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
+void ToRaster::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
 {
     if (pipelines.size() > 1)
     {

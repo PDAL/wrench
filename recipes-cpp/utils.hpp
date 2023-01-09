@@ -76,6 +76,10 @@ struct ParallelJobInfo
     // bounding box for this job (for input/output)
     BOX2D box;
 
+    // bounding box for the job with extra collar that some algs may use
+    // in case they need access to neighboring points at the edges of tiles
+    BOX2D boxWithCollar;
+
     // modes of operation:
     // A. multi input without box  (LAS/LAZ)    -- per file strategy
     //    - all input files are processed, no filtering on bounding box
@@ -96,7 +100,7 @@ QuickInfo getQuickInfo(std::string inputFile);
 
 MetadataNode getReaderMetadata(std::string inputFile);
 
-void runPipelineParallel(point_count_t totalPoints, std::vector<std::unique_ptr<PipelineManager>>& pipelines, int max_threads);
+void runPipelineParallel(point_count_t totalPoints, bool isStreaming, std::vector<std::unique_ptr<PipelineManager>>& pipelines, int max_threads);
 
 std::string box_to_pdal_bounds(const BOX2D &box);
 
@@ -106,3 +110,5 @@ inline bool ends_with(std::string const & value, std::string const & ending)
     if (ending.size() > value.size()) return false;
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
+
+bool rasterTilesToCog(const std::vector<std::string> &inputFiles, const std::string &outputFile);

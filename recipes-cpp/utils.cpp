@@ -9,6 +9,8 @@
 #include <pdal/StageFactory.hpp>
 #include <pdal/util/ThreadPool.hpp>
 
+#include <gdal/gdal_utils.h>
+
 using namespace pdal;
 
 #include "progressbar.hpp"
@@ -17,20 +19,24 @@ using namespace pdal;
 std::mutex bar_mutex;
 static progressbar* global_bar = nullptr;
 
+static void bar_update()
+{
+    bar_mutex.lock();
+    global_bar->update();
+    bar_mutex.unlock();
+}
 
+
+// Table subclass that also takes care of updating progress in streaming pipelines
 class MyTable : public FixedPointTable
 {
 public:
     MyTable(point_count_t capacity) : FixedPointTable(capacity) {}
 
 protected:
-    virtual void reset() {
-
-        bar_mutex.lock();
-        global_bar->update();
-        //std::cout << "." << std::flush;
-        bar_mutex.unlock();
-
+    virtual void reset()
+    {
+        bar_update();
         FixedPointTable::reset();
     }
 };
@@ -79,7 +85,7 @@ MetadataNode getReaderMetadata(std::string inputFile)
 }
 
 
-void runPipelineParallel(point_count_t totalPoints, std::vector<std::unique_ptr<PipelineManager>>& pipelines, int max_threads)
+void runPipelineParallel(point_count_t totalPoints, bool isStreaming, std::vector<std::unique_ptr<PipelineManager>>& pipelines, int max_threads)
 {
     const int CHUNK_SIZE = 1'000'000;
     int num_chunks = totalPoints / CHUNK_SIZE;
@@ -89,26 +95,40 @@ void runPipelineParallel(point_count_t totalPoints, std::vector<std::unique_ptr<
     auto start = std::chrono::high_resolution_clock::now();
 
     // https://github.com/gipert/progressbar
-    progressbar bar(num_chunks);
+    progressbar bar(isStreaming ? num_chunks : pipelines.size());
     global_bar = &bar;
 
     std::cout << "jobs " << pipelines.size() << std::endl;
     std::cout << "max threads " << max_threads << std::endl;
+    if (!isStreaming)
+        std::cout << "running in non-streaming mode!" << std::endl;
 
     int nThreads = std::min( (int)pipelines.size(), max_threads );
     ThreadPool p(nThreads);
     for (size_t i = 0; i < pipelines.size(); ++i)
     {
         PipelineManager* pipeline = pipelines[i].get();
-        p.add([pipeline]() {
+        if (isStreaming)
+        {
+            p.add([pipeline]() {
 
-            MyTable table(CHUNK_SIZE);
-            pipeline->executeStream(table);
+                MyTable table(CHUNK_SIZE);
+                pipeline->executeStream(table);
 
-        });
+            });
+        }
+        else
+        {
+            p.add([pipeline, &pipelines, i]() {
+                pipeline->execute();
+                pipelines[i].reset();  // to free the point table and views (meshes, rasters)
+                bar_update();
+                std::cout << "job " << i << " done" << std::endl;
+            });
+        }
     }
 
-    std::cout << "starting to wait" << std::endl;
+    //std::cout << "starting to wait" << std::endl;
 
     // while (p.tasksInQueue() + p.tasksInProgress())
     // {
@@ -123,4 +143,53 @@ void runPipelineParallel(point_count_t totalPoints, std::vector<std::unique_ptr<
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     std::cout << "time " << duration.count()/1000. << " s" << std::endl;
+}
+
+
+static GDALDatasetH rasterTilesToVrt(const std::vector<std::string> &inputFiles, const std::string &outputVrtFile)
+{
+    // build a VRT so that all tiles can be handled as a single data source
+
+    std::vector<const char*> dsNames;
+    for ( const std::string &t : inputFiles )
+    {
+        dsNames.push_back(t.c_str());
+    }
+
+    // https://gdal.org/api/gdal_utils.html
+    GDALDatasetH ds = GDALBuildVRT(outputVrtFile.c_str(), (int)dsNames.size(), nullptr, dsNames.data(), nullptr, nullptr);
+    return ds;
+}
+
+static bool rasterVrtToCog(GDALDatasetH ds, const std::string &outputFile)
+{
+    const char* args[] = { "-of", "COG", "-co", "COMPRESS=DEFLATE", NULL };
+    GDALTranslateOptions* psOptions = GDALTranslateOptionsNew((char**)args, NULL);
+
+    GDALDatasetH dsFinal = GDALTranslate(outputFile.c_str(), ds, psOptions, nullptr);
+    GDALTranslateOptionsFree(psOptions);
+    if (!dsFinal)
+        return false;
+    GDALClose(dsFinal);
+    return true;
+}
+
+bool rasterTilesToCog(const std::vector<std::string> &inputFiles, const std::string &outputFile)
+{
+    std::string outputVrt = outputFile;
+    assert(ends_with(outputVrt, ".tif"));
+    outputVrt.erase(outputVrt.rfind(".tif"), 4);
+    outputVrt += ".vrt";
+
+    GDALDatasetH ds = rasterTilesToVrt(inputFiles, outputVrt);
+
+    if (!ds)
+        return false;
+
+    rasterVrtToCog(ds, outputFile);
+    GDALClose(ds);
+
+    // TODO: remove VRT + partial tifs after gdal_translate?
+
+    return true;
 }
