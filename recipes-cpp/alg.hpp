@@ -22,6 +22,8 @@ struct Alg
     bool hasSingleInput = true;   // some algs need multiple inputs - they should set this flag to false
     std::string inputFile;
 
+    std::string filterExpression;  // optional argument to limit input points
+
     pdal::ProgramArgs programArgs;
 
     Alg() = default;
@@ -136,6 +138,29 @@ struct Merge : public Alg
 };
 
 
+struct Thin : public Alg
+{
+    // parameters from the user
+    std::string outputFile;
+    int step;  // keep every N-th point
+    std::string outputFormat;  // las / laz / copc
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argStep = nullptr;
+    pdal::Arg* argOutputFormat = nullptr;
+
+    std::vector<std::string> tileOutputFiles;
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};
+
+
+
 struct ToRaster : public Alg
 {
     // parameters from the user
@@ -151,6 +176,7 @@ struct ToRaster : public Alg
     pdal::Arg* argOutput = nullptr;
     pdal::Arg* argRes = nullptr;
     pdal::Arg* argAttribute = nullptr;
+
     pdal::Arg* argTileSize = nullptr;
     pdal::Arg* argTileOriginX = nullptr;
     pdal::Arg* argTileOriginY = nullptr;

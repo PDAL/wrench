@@ -109,6 +109,11 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, double r
         writer_opts.add(pdal::Option("bounds", box_to_pdal_bounds(box2)));
     }
 
+    if (!tile->filterExpression.empty())
+    {
+        writer_opts.add(pdal::Option("where", tile->filterExpression));
+    }
+
     // TODO: "writers.gdal: Requested driver 'COG' does not support file creation.""
     //   writer_opts.add(pdal::Option("gdaldriver", "COG"));
 
@@ -165,7 +170,7 @@ void ToRaster::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& p
                 // to avoid empty areas in resulting rasters
                 tileBox.clip(gridBounds);
 
-                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
+                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox, filterExpression);
 
                 // add collar to avoid edge effects
                 tile.boxWithCollar = tileBox;
@@ -213,7 +218,7 @@ void ToRaster::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& p
             {
                 BOX2D tileBox = t.boxAt(ix, iy);
 
-                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
+                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox, filterExpression);
                 tile.inputFilenames.push_back(inputFile);
 
                 // add collar to avoid edge effects
@@ -236,7 +241,7 @@ void ToRaster::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& p
     {
         // single input LAS/LAZ - no parallelism
 
-        ParallelJobInfo tile(ParallelJobInfo::Single);
+        ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
         pipelines.push_back(pipeline(&tile, resolution, attribute));

@@ -91,6 +91,13 @@ std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, double resoluti
         delaunay.setInput(*stage);  // connect all readers to the writer
     }
 
+    if (!tile->filterExpression.empty())
+    {
+        Options filter_opts;
+        filter_opts.add(pdal::Option("where", tile->filterExpression));
+        delaunay.addOptions(filter_opts);
+    }
+
     pdal::Options faceRaster_opts;
     faceRaster_opts.add(pdal::Option("resolution", resolution));
 
@@ -156,7 +163,7 @@ void ToRasterTin::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>
                 // to avoid empty areas in resulting rasters
                 tileBox.clip(gridBounds);
 
-                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
+                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox, filterExpression);
 
                 // add collar to avoid edge effects
                 tile.boxWithCollar = tileBox;
@@ -204,8 +211,12 @@ void ToRasterTin::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>
             {
                 BOX2D tileBox = t.boxAt(ix, iy);
 
-                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
+                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox, filterExpression);
                 tile.inputFilenames.push_back(inputFile);
+
+                // add collar to avoid edge effects
+                tile.boxWithCollar = tileBox;
+                tile.boxWithCollar.grow(collarSize);
 
                 // create temp output file names
                 // for tile (x=2,y=3) that goes to /tmp/hello.tif,
@@ -221,7 +232,7 @@ void ToRasterTin::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>
     }
     else
     {
-        ParallelJobInfo tile(ParallelJobInfo::Single);
+        ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
         pipelines.push_back(pipeline(&tile, resolution));

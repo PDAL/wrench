@@ -98,6 +98,11 @@ std::unique_ptr<PipelineManager> Density::pipeline(ParallelJobInfo *tile) const
         writer_opts.add(pdal::Option("bounds", box_to_pdal_bounds(box2)));
     }
 
+    if (!tile->filterExpression.empty())
+    {
+        writer_opts.add(pdal::Option("where", tile->filterExpression));
+    }
+
     // TODO: "writers.gdal: Requested driver 'COG' does not support file creation.""
     //   writer_opts.add(pdal::Option("gdaldriver", "COG"));
 
@@ -156,7 +161,7 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
                 // to avoid empty areas in resulting rasters
                 tileBox.clip(gridBounds);
 
-                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
+                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox, filterExpression);
                 for (const VirtualPointCloud::File & f: vpc.overlappingBox2D(tileBox))
                 {
                     tile.inputFilenames.push_back(f.filename);
@@ -210,7 +215,7 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
             {
                 BOX2D tileBox = t.boxAt(ix, iy);
 
-                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox);
+                ParallelJobInfo tile(ParallelJobInfo::Spatial, tileBox, filterExpression);
                 tile.inputFilenames.push_back(inputFile);
 
                 // create temp output file names
@@ -229,7 +234,7 @@ void Density::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pi
     {
         // single input LAS/LAZ - no parallelism
 
-        ParallelJobInfo tile(ParallelJobInfo::Single);
+        ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
         pipelines.push_back(pipeline(&tile));

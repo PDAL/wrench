@@ -65,7 +65,7 @@ struct ParallelJobInfo
     } mode;
 
     ParallelJobInfo(ParallelMode m = Single): mode(m) {}
-    ParallelJobInfo(ParallelMode m, const BOX2D &b): mode(m), box(b) {}
+    ParallelJobInfo(ParallelMode m, const BOX2D &b, const std::string fe): mode(m), box(b), filterExpression(fe) {}
 
     // what input point cloud files to read for a job
     std::vector<std::string> inputFilenames;
@@ -79,6 +79,9 @@ struct ParallelJobInfo
     // bounding box for the job with extra collar that some algs may use
     // in case they need access to neighboring points at the edges of tiles
     BOX2D boxWithCollar;
+
+    // PDAL filter expression to apply on all pipelines
+    std::string filterExpression;
 
     // modes of operation:
     // A. multi input without box  (LAS/LAZ)    -- per file strategy

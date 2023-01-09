@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
         std::cerr << " - density" << std::endl;
         std::cerr << " - build_vpc" << std::endl;
         std::cerr << " - merge" << std::endl;
+        std::cerr << " - thin" << std::endl;
         std::cerr << " - to_raster" << std::endl;
         std::cerr << " - to_raster_tin" << std::endl;
         return 1;
@@ -60,6 +61,7 @@ int main(int argc, char* argv[])
     //args.push_back("--resolution=1");
     //args.push_back("--tile-size=250");
     //args.push_back("--threads=4");
+    //args.push_back("--filter=Classification==5");
 #elif 0
     std::string cmd = "clip";
     std::vector<std::string> args;
@@ -67,6 +69,7 @@ int main(int argc, char* argv[])
     args.push_back("--input=/home/martin/qgis/point-cloud-sandbox/data/24-fixed.las");
     args.push_back("--polygon=/home/martin/qgis/point-cloud-sandbox/data/24-polygon.gpkg");
     args.push_back("--output=/tmp/clipped.las");
+    //args.push_back("--filter=Classification==5");
 #elif 0
     std::string cmd = "build_vpc";
     std::vector<std::string> args;
@@ -96,6 +99,7 @@ int main(int argc, char* argv[])
     args.push_back("--output=/tmp/first.tif");
     args.push_back("--resolution=1");
     args.push_back("--threads=4");
+    //args.push_back("--filter=Classification==2");
     // for good alignment of input and output
     args.push_back("--tile-origin-x=377250");
     args.push_back("--tile-origin-y=5441420");
@@ -117,14 +121,15 @@ int main(int argc, char* argv[])
     args.push_back("--input=/home/martin/qgis/point-cloud-sandbox/data/trencin-2-ground.laz");
     args.push_back("--output=/tmp/raster_tin.tif");
     args.push_back("--resolution=1");
-#elif 1
+#elif 0
     std::string cmd = "to_raster";
     std::vector<std::string> args;
 
     args.push_back("--input=/tmp/first.vpc");
     args.push_back("--output=/tmp/first-dem.tif");
     args.push_back("--resolution=1");
-#else
+    args.push_back("--filter=Classification==2");
+#elif 0
     std::string cmd = "to_raster_tin";
     std::vector<std::string> args;
 
@@ -139,11 +144,19 @@ int main(int argc, char* argv[])
     args.push_back("--input=/tmp/first.vpc");
     args.push_back("--output=/tmp/first-tin.tif");
     args.push_back("--resolution=1");
+    args.push_back("--filter=Classification==2");
     args.push_back("--threads=1");
-    args.push_back("--tile-size=500");
+    //args.push_back("--tile-size=500");
     // for good alignment of input and output
-    args.push_back("--tile-origin-x=377250");
-    args.push_back("--tile-origin-y=5441420");
+    //args.push_back("--tile-origin-x=377250");
+    //args.push_back("--tile-origin-y=5441420");
+#else
+    std::string cmd = "thin";
+    std::vector<std::string> args;
+
+    args.push_back("--input=/tmp/first.vpc");
+    args.push_back("--step=20");
+    args.push_back("--output=/tmp/tatry-thinned.vpc");
 #endif
 
     std::cout << "command: " << cmd << std::endl;
@@ -171,6 +184,11 @@ int main(int argc, char* argv[])
     {
         Merge merge;
         runAlg(args, merge);
+    }
+    else if (cmd == "thin")
+    {
+        Thin thin;
+        runAlg(args, thin);
     }
     else if (cmd == "to_raster")
     {

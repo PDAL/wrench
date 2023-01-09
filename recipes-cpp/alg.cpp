@@ -60,6 +60,9 @@ bool Alg::parseArgs(std::vector<std::string> args)
     {
         argInput = &programArgs.add("input,i", "Input point cloud file", inputFile);
     }
+
+    pdal::Arg& argFilter = programArgs.add("filter,f", "Filter expression for input data", filterExpression);
+
     addArgs();  // impl in derived
 
     // parallel run support (generic)

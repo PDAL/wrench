@@ -46,6 +46,12 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
 
     pdal::Options options;
     options.add(pdal::Option("forward", "all"));
+
+    if (!tile->filterExpression.empty())
+    {
+        options.add(pdal::Option("where", tile->filterExpression));
+    }
+
     Stage& w = manager->makeWriter(tile->outputFilename, "", options);
 
     for (const std::string& f : tile->inputFilenames)
@@ -58,8 +64,7 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
 
 void Merge::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints)
 {
-    ParallelJobInfo tile;
-    tile.mode = ParallelJobInfo::Single;
+    ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression);
     tile.inputFilenames = inputFiles;
     tile.outputFilename = outputFile;
 

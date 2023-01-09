@@ -49,6 +49,11 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
     hexbin_opts.add(pdal::Option("edge_size", 5));
     hexbin_opts.add(pdal::Option("threshold", 0));
 
+    if (!tile->filterExpression.empty())
+    {
+        hexbin_opts.add(pdal::Option("where", tile->filterExpression));
+    }
+
     Stage& w = manager->makeFilter( "filters.hexbin", r, hexbin_opts );
     return manager;
 }
@@ -64,16 +69,14 @@ void Boundary::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& p
 
         for (const VirtualPointCloud::File& f : vpc.files)
         {
-            ParallelJobInfo tile;
-            tile.mode = ParallelJobInfo::FileBased;
+            ParallelJobInfo tile(ParallelJobInfo::FileBased, BOX2D(), filterExpression);
             tile.inputFilenames.push_back(f.filename);
             pipelines.push_back(pipeline(&tile));
         }
     }
     else
     {
-        ParallelJobInfo tile;
-        tile.mode = ParallelJobInfo::Single;
+        ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression);
         tile.inputFilenames.push_back(inputFile);
         pipelines.push_back(pipeline(&tile));
     }

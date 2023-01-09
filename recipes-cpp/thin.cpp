@@ -20,23 +20,26 @@ using namespace pdal;
 namespace fs = std::filesystem;
 
 
-void Clip::addArgs()
+// TODO: add support for filters.sample and/or filters.voxeldownsize
+// (both in streaming mode but more memory intense - keeping occupation grid)
+
+void Thin::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
     argOutputFormat = &programArgs.add("output-format", "Output format (las/laz/copc)", outputFormat);
-    argPolygon = &programArgs.add("polygon,p", "Input polygon vector file", polygonFile);
+    argStep = &programArgs.add("step", "Keep every N-th point", step);
 }
 
-bool Clip::checkArgs()
+bool Thin::checkArgs()
 {
     if (!argOutput->set())
     {
         std::cerr << "missing output" << std::endl;
         return false;
     }
-    if (!argPolygon->set())
+    if (!argStep->set())
     {
-        std::cerr << "missing polygon" << std::endl;
+        std::cerr << "missing step" << std::endl;
         return false;
     }
 
@@ -55,62 +58,18 @@ bool Clip::checkArgs()
 }
 
 
-// populate polygons into filters.crop options
-bool loadPolygons(const std::string &polygonFile, pdal::Options& crop_opts, BOX2D& bbox)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, int step)
 {
-    GDALAllRegister();
-
-    GDALDatasetH hDS = GDALOpenEx( polygonFile.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL );
-    if( hDS == NULL )
-    {
-        std::cout << "cannot open polygon " << polygonFile << std::endl;
-        return false;
-    }
-
-    // TODO: reproject polygons to the CRS of the point cloud if they are not the same
-
-    OGRLayerH hLayer = GDALDatasetGetLayer(hDS, 0);
-    //hLayer = GDALDatasetGetLayerByName( hDS, "point" );
-
-    OGREnvelope fullEnvelope;
-
-    OGR_L_ResetReading(hLayer);
-    OGRFeatureH hFeature;
-    while( (hFeature = OGR_L_GetNextFeature(hLayer)) != NULL )
-    {
-        OGRGeometryH hGeometry = OGR_F_GetGeometryRef(hFeature);
-        if ( hGeometry != NULL )
-        {
-            OGREnvelope envelope;
-            OGR_G_GetEnvelope(hGeometry, &envelope);
-            if (!fullEnvelope.IsInit())
-                fullEnvelope = envelope;
-            else
-                fullEnvelope.Merge(envelope);
-            crop_opts.add(pdal::Option("polygon", Polygon(hGeometry)));
-        }
-        OGR_F_Destroy( hFeature );
-    }
-    GDALClose( hDS );
-
-    bbox = BOX2D(fullEnvelope.MinX, fullEnvelope.MinY, fullEnvelope.MaxX, fullEnvelope.MaxY);
-
-    return true;
-}
-
-
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pdal::Options &crop_opts)
-{
-    assert(tile);
-
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
 
     Stage& r = manager->makeReader( tile->inputFilenames[0], "");
 
-    Stage& f = manager->makeFilter( "filters.crop", r, crop_opts );
+    pdal::Options decim_opts;
+    decim_opts.add(pdal::Option("step", step));
+    Stage& f = manager->makeFilter( "filters.decimation", r, decim_opts );
 
     pdal::Options writer_opts;
-    writer_opts.add(pdal::Option("forward", "all"));
+    writer_opts.add(pdal::Option("forward", "all"));  // TODO: maybe we could use lower scale than the original
 
     Stage& w = manager->makeWriter( tile->outputFilename, "", f, writer_opts);
 
@@ -126,13 +85,8 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pd
 }
 
 
-void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints)
+void Thin::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints)
 {
-    pdal::Options crop_opts;
-    BOX2D bbox;
-    if (!loadPolygons(polygonFile, crop_opts, bbox))
-        return;
-
     if (ends_with(inputFile, ".vpc"))
     {
         if (!ends_with(outputFile, ".vpc"))
@@ -153,15 +107,6 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
 
         for (const VirtualPointCloud::File& f : vpc.files)
         {
-            if (!bbox.overlaps(f.bbox.to2d()))
-            {
-                totalPoints -= f.count;
-                //std::cout << "skipping " << f.filename << std::endl;
-                continue;  // we can safely skip
-            }
-
-            std::cout << "using " << f.filename << std::endl;
-
             ParallelJobInfo tile(ParallelJobInfo::FileBased, BOX2D(), filterExpression);
             tile.inputFilenames.push_back(f.filename);
 
@@ -172,7 +117,7 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
 
             tileOutputFiles.push_back(tile.outputFilename);
 
-            pipelines.push_back(pipeline(&tile, crop_opts));
+            pipelines.push_back(pipeline(&tile, step));
         }
     }
     else
@@ -180,11 +125,11 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
         ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
-        pipelines.push_back(pipeline(&tile, crop_opts));
+        pipelines.push_back(pipeline(&tile, step));
     }
 }
 
-void Clip::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
+void Thin::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
 {
     if (tileOutputFiles.empty())
         return;
