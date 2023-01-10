@@ -22,6 +22,7 @@ int main(int argc, char* argv[])
         std::cerr << " - clip" << std::endl;
         std::cerr << " - density" << std::endl;
         std::cerr << " - build_vpc" << std::endl;
+        std::cerr << " - info" << std::endl;
         std::cerr << " - merge" << std::endl;
         std::cerr << " - thin" << std::endl;
         std::cerr << " - to_raster" << std::endl;
@@ -158,13 +159,21 @@ int main(int argc, char* argv[])
     args.push_back("--input=/tmp/first.vpc");
     args.push_back("--step=20");
     args.push_back("--output=/tmp/tatry-thinned.vpc");
-#else
+#elif 0
     std::string cmd = "to_vector";
     std::vector<std::string> args;
 
     args.push_back("--input=/tmp/first.vpc");
     //args.push_back("--step=20");
     args.push_back("--output=/tmp/first.gpkg");
+#elif 0
+    std::string cmd = "info";
+    std::vector<std::string> args;
+    args.push_back("--input=/tmp/clipped.las");
+#else
+    std::string cmd = "info";
+    std::vector<std::string> args;
+    args.push_back("--input=/tmp/tatry-9.vpc");
 #endif
 
     std::cout << "command: " << cmd << std::endl;
@@ -212,6 +221,11 @@ int main(int argc, char* argv[])
     {
         ToVector toVector;
         runAlg(args, toVector);
+    }
+    else if (cmd == "info")
+    {
+        Info info;
+        runAlg(args, info);
     }
     else
     {

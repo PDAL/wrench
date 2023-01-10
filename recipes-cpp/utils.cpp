@@ -73,7 +73,7 @@ QuickInfo getQuickInfo(std::string inputFile)
     // return r.preview().m_pointCount;
 }
 
-MetadataNode getReaderMetadata(std::string inputFile)
+MetadataNode getReaderMetadata(std::string inputFile, MetadataNode *pointLayoutMeta)
 {
     // compared to quickinfo / preview, this provides more info...
 
@@ -81,6 +81,10 @@ MetadataNode getReaderMetadata(std::string inputFile)
     Stage &r = m.makeReader(inputFile, "");
     FixedPointTable table(10000);
     r.prepare(table);
+    if (pointLayoutMeta)
+    {
+        *pointLayoutMeta = table.layout()->toMetadata();
+    }
     return r.getMetadata();
 }
 

@@ -47,6 +47,16 @@ bool runAlg(std::vector<std::string> args, Alg &alg);
 //////////////
 
 
+struct Info : public Alg
+{
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};
+
 struct Density : public Alg
 {
     // parameters from the user

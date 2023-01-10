@@ -101,7 +101,7 @@ struct ParallelJobInfo
 
 QuickInfo getQuickInfo(std::string inputFile);
 
-MetadataNode getReaderMetadata(std::string inputFile);
+MetadataNode getReaderMetadata(std::string inputFile, MetadataNode *pointLayoutMeta = nullptr);
 
 void runPipelineParallel(point_count_t totalPoints, bool isStreaming, std::vector<std::unique_ptr<PipelineManager>>& pipelines, int max_threads);
 

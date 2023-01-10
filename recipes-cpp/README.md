@@ -1,6 +1,14 @@
 
 # Algorithms
 
+## info
+
+Prints basic metadata from the point cloud file:
+
+```
+pdal_workbench info --input=data.las
+```
+
 ## boundary
 
 Exports a polygon file containing boundary. It may contain holes and it may be a multi-part polygon.
@@ -90,6 +98,7 @@ When algorithms create derived VPCs, by default they use uncompressed LAS, but `
 
 | Algorithm | VPC | Notes |
 |--------------|-----------|--|
+| info | yes | |
 | boundary | multi-threaded | per file |
 | density | multi-threaded | spatial tiling |
 | clip | multi-threaded | per file |

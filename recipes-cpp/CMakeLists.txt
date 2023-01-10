@@ -14,6 +14,7 @@ add_executable(pdal_workbench
     boundary.cpp
     clip.cpp
     density.cpp
+    info.cpp
     merge.cpp
     thin.cpp
     to_raster.cpp
