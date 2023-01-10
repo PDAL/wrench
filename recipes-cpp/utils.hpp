@@ -114,4 +114,18 @@ inline bool ends_with(std::string const & value, std::string const & ending)
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
+
+inline std::string join_strings(const std::vector<std::string>& list, char delimiter)
+{
+    std::string output;
+    for (std::vector<std::string>::const_iterator it = list.begin(); it != list.end(); ++it)
+    {
+        output += *it;
+        if (it != list.end() - 1)
+            output += delimiter;
+    }
+    return output;
+}
+
+
 bool rasterTilesToCog(const std::vector<std::string> &inputFiles, const std::string &outputFile);

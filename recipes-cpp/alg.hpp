@@ -218,3 +218,23 @@ struct ToRasterTin : public Alg
     virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 };
+
+
+struct ToVector : public Alg
+{
+    // parameters from the user
+    std::string outputFile;
+    std::vector<std::string> attributes;
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    //pdal::Arg* argAttribute = nullptr;
+
+    std::vector<std::string> tileOutputFiles;
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};

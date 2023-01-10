@@ -57,6 +57,13 @@ Exports point cloud data to a 2D raster grid like `to_raster` does, but using a 
 pdal_workbench to_raster_tin --output=raster.tif --resolution=1 data.las
 ```
 
+## to_vector
+
+Exports point cloud data to a vector layer with 3D points (a GeoPackage), optionally with extra attributes:
+
+```
+pdal_workbench to_vector --output=data.gpkg data.las
+```
 
 # Virtual Point Clouds (VPC)
 
@@ -90,3 +97,4 @@ When algorithms create derived VPCs, by default they use uncompressed LAS, but `
 | thin | multi-threaded | per file |
 | to_raster | multi-threaded | spatial tiling |
 | to_raster_tin | multi-threaded | spatial tiling |
+| to_vector | multi-threaded | per file |

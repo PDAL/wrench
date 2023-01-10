@@ -18,6 +18,7 @@ add_executable(pdal_workbench
     thin.cpp
     to_raster.cpp
     to_raster_tin.cpp
+    to_vector.cpp
     utils.cpp
     vpc.cpp
     #MyThreadPool.cpp
