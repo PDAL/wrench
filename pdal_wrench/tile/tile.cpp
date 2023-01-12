@@ -1,5 +1,5 @@
 /*****************************************************************************
- *   Copyright (c) 2020, Hobu, Inc. (info@hobu.co)                           *
+ *   Copyright (c) 2023, Lutra Consulting Ltd. and Hobu, Inc.                *
  *                                                                           *
  *   All rights reserved.                                                    *
  *                                                                           *
