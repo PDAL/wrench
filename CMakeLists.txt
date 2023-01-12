@@ -9,30 +9,29 @@ find_package(PDAL REQUIRED)
 find_package(GDAL REQUIRED)
 
 add_executable(pdal_wrench
-    main.cpp
-    alg.cpp
-    boundary.cpp
-    clip.cpp
-    density.cpp
-    info.cpp
-    merge.cpp
-    thin.cpp
-    to_raster.cpp
-    to_raster_tin.cpp
-    to_vector.cpp
-    translate.cpp
-    utils.cpp
-    vpc.cpp
-    #MyThreadPool.cpp
+    src/main.cpp
+    src/alg.cpp
+    src/boundary.cpp
+    src/clip.cpp
+    src/density.cpp
+    src/info.cpp
+    src/merge.cpp
+    src/thin.cpp
+    src/to_raster.cpp
+    src/to_raster_tin.cpp
+    src/to_vector.cpp
+    src/translate.cpp
+    src/utils.cpp
+    src/vpc.cpp
 
-    tile/tile.cpp
-    tile/BufferCache.cpp
-    tile/Cell.cpp
-    tile/FileProcessor.cpp
-    tile/Las.cpp
-    tile/TileGrid.cpp
-    tile/ThreadPool.cpp
-    tile/Writer.cpp
+    src/tile/tile.cpp
+    src/tile/BufferCache.cpp
+    src/tile/Cell.cpp
+    src/tile/FileProcessor.cpp
+    src/tile/Las.cpp
+    src/tile/TileGrid.cpp
+    src/tile/ThreadPool.cpp
+    src/tile/Writer.cpp
 )
 
 target_include_directories(pdal_wrench

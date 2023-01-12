@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
     std::string cmd = "info";
     std::vector<std::string> args;
     args.push_back("--input=/tmp/tatry-9.vpc");
-#elif 0
+#elif 1
     std::string cmd = "translate";
     std::vector<std::string> args;
 
