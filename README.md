@@ -1,5 +1,21 @@
 
-# Algorithms
+# PDAL wrench
+
+A collection of easy to use command line tools for processing of point cloud data:
+
+- basic management of data (info, translate, merge, tile, thin, clip, boundary, density, to_vector)
+- export of raster grids (to_raster, to_raster_tin)
+
+And more algorithms will be added in the future!
+
+Most of the tools are multi-threaded, making good use of all available CPUs for fast processing.
+
+All tools are based on PDAL pipelines, also using the other usual geospatial libraries: GDAL/OGR, GEOS and PROJ.
+
+Some may ask why not let users build their pipelines in PDAL directly. There are several reasons:
+
+- ease of use: PDAL is great for advanced users, but not everyone finds it easy to manually craft JSON files with pipelines, study manuals of the many stages and read details about file formats involved
+- parallel execution: PDAL runs pipelines in a single thread - only one CPU gets to do the work normally - and users need to implement their own parallelism if they wish so
 
 ## info
 
