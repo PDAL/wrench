@@ -6,7 +6,7 @@
 Prints basic metadata from the point cloud file:
 
 ```
-pdal_workbench info --input=data.las
+pdal_wrench info --input=data.las
 ```
 
 ## translate
@@ -14,19 +14,19 @@ pdal_workbench info --input=data.las
 Convert to a different file format (e.g. create compressed LAZ):
 
 ```
-pdal_workbench translate --input=data.las --output=data.laz
+pdal_wrench translate --input=data.las --output=data.laz
 ```
 
 Reproject point cloud to a different coordinate reference system:
 
 ```
-pdal_workbench translate --input=data.las --output=reprojected.las --transform-crs=EPSG:3857
+pdal_wrench translate --input=data.las --output=reprojected.las --transform-crs=EPSG:3857
 ```
 
 Fix coordinate reference system (if not present or wrong):
 
 ```
-pdal_workbench translate --input=data-with-invalid-crs.las --output=data.las --assign-crs=EPSG:3857
+pdal_wrench translate --input=data-with-invalid-crs.las --output=data.las --assign-crs=EPSG:3857
 ```
 
 
@@ -35,7 +35,7 @@ pdal_workbench translate --input=data-with-invalid-crs.las --output=data.las --a
 Exports a polygon file containing boundary. It may contain holes and it may be a multi-part polygon.
 
 ```
-pdal_workbench boundary --input=data.las --output=boundary.gpkg
+pdal_wrench boundary --input=data.las --output=boundary.gpkg
 ```
 
 ## density
@@ -43,7 +43,7 @@ pdal_workbench boundary --input=data.las --output=boundary.gpkg
 Exports a raster file where each cell contains number of points that are in that cell's area.
 
 ```
-pdal_workbench density --input=data.las --resolution=1 --output=density.tif
+pdal_wrench density --input=data.las --resolution=1 --output=density.tif
 ```
 
 ## clip
@@ -51,7 +51,7 @@ pdal_workbench density --input=data.las --resolution=1 --output=density.tif
 Outputs only points that are inside of the clipping polygons.
 
 ```
-pdal_workbench clip --input=data.las --polygon=clip.gpkg --output=data_clipped.las
+pdal_wrench clip --input=data.las --polygon=clip.gpkg --output=data_clipped.las
 ```
 
 ## merge
@@ -59,7 +59,7 @@ pdal_workbench clip --input=data.las --polygon=clip.gpkg --output=data_clipped.l
 Merges multiple point cloud files to a single one.
 
 ```
-pdal_workbench merge --output=merged.las data1.las data2.las data3.las
+pdal_wrench merge --output=merged.las data1.las data2.las data3.las
 ```
 
 ## thin
@@ -67,7 +67,7 @@ pdal_workbench merge --output=merged.las data1.las data2.las data3.las
 Creates a thinned version of the point cloud by only keeping every N-th point. This will only keep every 20th point, so only 5% of points will be in the output:
 
 ```
-pdal_workbench thin --output=thinned.las --step=20 data.las
+pdal_wrench thin --output=thinned.las --step=20 data.las
 ```
 
 ## to_raster
@@ -75,7 +75,7 @@ pdal_workbench thin --output=thinned.las --step=20 data.las
 Exports point cloud data to a 2D raster grid, having cell size of given resolution, writing values from the specified attribute. Uses inverse distance weighting.
 
 ```
-pdal_workbench to_raster --output=raster.tif --resolution=1 --attribute=Z data.las
+pdal_wrench to_raster --output=raster.tif --resolution=1 --attribute=Z data.las
 ```
 
 ## to_raster_tin
@@ -83,7 +83,7 @@ pdal_workbench to_raster --output=raster.tif --resolution=1 --attribute=Z data.l
 Exports point cloud data to a 2D raster grid like `to_raster` does, but using a triangulation of points and then interpolating cell values from triangles. It does not produce any "holes" when some data are missing. Only supports output of Z attribute.
 
 ```
-pdal_workbench to_raster_tin --output=raster.tif --resolution=1 data.las
+pdal_wrench to_raster_tin --output=raster.tif --resolution=1 data.las
 ```
 
 ## to_vector
@@ -91,7 +91,7 @@ pdal_workbench to_raster_tin --output=raster.tif --resolution=1 data.las
 Exports point cloud data to a vector layer with 3D points (a GeoPackage), optionally with extra attributes:
 
 ```
-pdal_workbench to_vector --output=data.gpkg data.las
+pdal_wrench to_vector --output=data.gpkg data.las
 ```
 
 # Virtual Point Clouds (VPC)
@@ -100,17 +100,17 @@ This is similar to GDAL's VRT - a single file referring to other files that cont
 
 To create a virtual point cloud:
 ```
-pdal_workbench build_vpc --output=hello.vpc data1.las data2.las data3.las
+pdal_wrench build_vpc --output=hello.vpc data1.las data2.las data3.las
 ```
 
 Afterwards, other algorithms can be applied to a VPC:
 ```
-pdal_workbench clip --input=hello.vpc --polygon=clip.gpkg --output=hello_clipped.vpc
+pdal_wrench clip --input=hello.vpc --polygon=clip.gpkg --output=hello_clipped.vpc
 ```
 
 This will create a grid for each data file separately in parallel and then merge the results to a final GeoTIFF:
 ```
-pdal_workbench density --input=hello.vpc --resolution=1 --output=density.tif
+pdal_wrench density --input=hello.vpc --resolution=1 --output=density.tif
 ```
 
 When algorithms create derived VPCs, by default they use uncompressed LAS, but `--output-format=laz` option can switch to compressed LAZ.

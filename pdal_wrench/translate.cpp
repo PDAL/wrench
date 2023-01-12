@@ -62,9 +62,6 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::str
 
     Stage& r = manager->makeReader( tile->inputFilenames[0], "", reader_opts);
 
-    pdal::Options writer_opts;
-    writer_opts.add(pdal::Option("forward", "all"));
-
     // optional reprojection
     Stage* reproject = nullptr;
     if (!transformCrs.empty())
@@ -72,6 +69,22 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::str
         Options transform_opts;
         transform_opts.add(pdal::Option("out_srs", transformCrs));
         reproject = &manager->makeFilter( "filters.reprojection", r, transform_opts);
+    }
+
+    pdal::Options writer_opts;
+    if (!reproject)
+    {
+        // let's use the same offset & scale & header & vlrs as the input
+        writer_opts.add(pdal::Option("forward", "all"));
+    }
+    else
+    {
+        // avoid adding offset as it probably wouldn't work
+        // TODO: maybe adjust scale as well - depending on the CRS
+        writer_opts.add(pdal::Option("forward", "header,scale,vlr"));
+        writer_opts.add(pdal::Option("offset_x", "auto"));
+        writer_opts.add(pdal::Option("offset_y", "auto"));
+        writer_opts.add(pdal::Option("offset_z", "auto"));
     }
 
     Stage& writerInput = reproject ? *reproject : r;
