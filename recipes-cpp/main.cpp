@@ -28,6 +28,7 @@ int main(int argc, char* argv[])
         std::cerr << " - to_raster" << std::endl;
         std::cerr << " - to_raster_tin" << std::endl;
         std::cerr << " - to_vector" << std::endl;
+        std::cerr << " - translate" << std::endl;
         return 1;
     }
     std::string cmd = argv[1];
@@ -170,10 +171,25 @@ int main(int argc, char* argv[])
     std::string cmd = "info";
     std::vector<std::string> args;
     args.push_back("--input=/tmp/clipped.las");
-#else
+#elif 0
     std::string cmd = "info";
     std::vector<std::string> args;
     args.push_back("--input=/tmp/tatry-9.vpc");
+#elif 0
+    std::string cmd = "translate";
+    std::vector<std::string> args;
+
+    args.push_back("--input=/home/martin/qgis/point-cloud-sandbox/data/trencin.laz");
+    args.push_back("--assign-crs=EPSG:5514");
+    args.push_back("--output=/tmp/trencin-fixed-crs.las");
+#else
+    std::string cmd = "translate";
+    std::vector<std::string> args;
+
+    args.push_back("--input=/tmp/trencin-fixed-crs.las");
+    args.push_back("--transform-crs=EPSG:3857");
+    args.push_back("--filter=Classification==2");
+    args.push_back("--output=/tmp/trencin-3857.las");
 #endif
 
     std::cout << "command: " << cmd << std::endl;
@@ -226,6 +242,11 @@ int main(int argc, char* argv[])
     {
         Info info;
         runAlg(args, info);
+    }
+    else if (cmd == "translate")
+    {
+        Translate translate;
+        runAlg(args, translate);
     }
     else
     {

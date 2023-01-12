@@ -57,6 +57,27 @@ struct Info : public Alg
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 };
 
+struct Translate : public Alg
+{
+    // parameters from the user
+    std::string outputFile;
+    std::string assignCrs;
+    std::string transformCrs;
+    std::string outputFormat;  // las / laz / copc
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argOutputFormat = nullptr;
+
+    std::vector<std::string> tileOutputFiles;
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};
+
 struct Density : public Alg
 {
     // parameters from the user

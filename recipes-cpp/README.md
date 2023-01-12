@@ -9,6 +9,27 @@ Prints basic metadata from the point cloud file:
 pdal_workbench info --input=data.las
 ```
 
+## translate
+
+Convert to a different file format (e.g. create compressed LAZ):
+
+```
+pdal_workbench translate --input=data.las --output=data.laz
+```
+
+Reproject point cloud to a different coordinate reference system:
+
+```
+pdal_workbench translate --input=data.las --output=reprojected.las --transform-crs=EPSG:3857
+```
+
+Fix coordinate reference system (if not present or wrong):
+
+```
+pdal_workbench translate --input=data-with-invalid-crs.las --output=data.las --assign-crs=EPSG:3857
+```
+
+
 ## boundary
 
 Exports a polygon file containing boundary. It may contain holes and it may be a multi-part polygon.
@@ -107,3 +128,4 @@ When algorithms create derived VPCs, by default they use uncompressed LAS, but `
 | to_raster | multi-threaded | spatial tiling |
 | to_raster_tin | multi-threaded | spatial tiling |
 | to_vector | multi-threaded | per file |
+| translate | multi-threaded | per file |

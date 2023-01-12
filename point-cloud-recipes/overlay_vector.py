@@ -18,7 +18,8 @@ args = parser.parse_args()
 
 r = pdal.Reader(args.input_file)
 
-# TODO: not sure what's wrong, all points get assigned zero in my test
+# filters.overlay has a bug related to reprojection:
+# https://github.com/PDAL/PDAL/issues/3932
 
 overlay_args = {
     "dimension": args.output_attribute,
