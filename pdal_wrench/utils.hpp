@@ -2,6 +2,7 @@
 #pragma once
 
 #include <pdal/PipelineManager.hpp>
+#include <mutex>
 
 using namespace pdal;
 
@@ -96,6 +97,49 @@ struct ParallelJobInfo
     //              if overlapping:      mode A - with a warning it is inefficient?
     // - multi-copc:  mode B
     // - single-copc: mode B or just single pipeline
+};
+
+
+// GDAL-style progress bar:
+// 0...10...20...30...40...50...60...70...80...90...100 - done.
+struct ProgressBar
+{
+private:
+  uint64_t total = 0;
+  uint64_t current = 0;
+  int last_percent = -1;  // -1 = not started, 0-50 means 0-100 percent
+  std::mutex mutex;
+
+public:
+  void init(uint64_t tot)
+  {
+    total = tot;
+    current = 0;
+    last_percent = -1;
+    add(0);
+  }
+
+  void add(uint64_t count = 1)
+  {
+    mutex.lock();
+    current += count;
+
+    int new_percent = (int)std::round(std::min(1.0,((double)current/(double)total))*100)/2;
+    while (new_percent > last_percent)
+    {
+        ++last_percent;
+        if (last_percent % 5 == 0)
+            std::cout << last_percent*2 << std::flush;
+        else
+            std::cout << "." << std::flush;
+    }
+    mutex.unlock();
+  }
+
+  void done()
+  {
+    std::cout << " - done." << std::endl;
+  }
 };
 
 

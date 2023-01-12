@@ -13,18 +13,8 @@
 
 using namespace pdal;
 
-#include "progressbar.hpp"
 
-
-std::mutex bar_mutex;
-static progressbar* global_bar = nullptr;
-
-static void bar_update()
-{
-    bar_mutex.lock();
-    global_bar->update();
-    bar_mutex.unlock();
-}
+static ProgressBar sProgressBar;
 
 
 // Table subclass that also takes care of updating progress in streaming pipelines
@@ -36,7 +26,7 @@ public:
 protected:
     virtual void reset()
     {
-        bar_update();
+        sProgressBar.add();
         FixedPointTable::reset();
     }
 };
@@ -91,21 +81,19 @@ MetadataNode getReaderMetadata(std::string inputFile, MetadataNode *pointLayoutM
 
 void runPipelineParallel(point_count_t totalPoints, bool isStreaming, std::vector<std::unique_ptr<PipelineManager>>& pipelines, int max_threads)
 {
-    const int CHUNK_SIZE = 1'000'000;
+    const int CHUNK_SIZE = 100'000;
     int num_chunks = totalPoints / CHUNK_SIZE;
 
     std::cout << "total points: " << (float)totalPoints / 1'000'000 << "M" << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    // https://github.com/gipert/progressbar
-    progressbar bar(isStreaming ? num_chunks : pipelines.size());
-    global_bar = &bar;
-
     std::cout << "jobs " << pipelines.size() << std::endl;
     std::cout << "max threads " << max_threads << std::endl;
     if (!isStreaming)
         std::cout << "running in non-streaming mode!" << std::endl;
+
+    sProgressBar.init(isStreaming ? num_chunks : pipelines.size());
 
     int nThreads = std::min( (int)pipelines.size(), max_threads );
     ThreadPool p(nThreads);
@@ -126,8 +114,7 @@ void runPipelineParallel(point_count_t totalPoints, bool isStreaming, std::vecto
             p.add([pipeline, &pipelines, i]() {
                 pipeline->execute();
                 pipelines[i].reset();  // to free the point table and views (meshes, rasters)
-                bar_update();
-                std::cout << "job " << i << " done" << std::endl;
+                sProgressBar.add();
             });
         }
     }
@@ -142,7 +129,7 @@ void runPipelineParallel(point_count_t totalPoints, bool isStreaming, std::vecto
 
     p.join();
 
-    std::cerr << std::endl;
+    sProgressBar.done();
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
