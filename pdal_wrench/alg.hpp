@@ -11,11 +11,18 @@ using namespace pdal;
 struct ParallelJobInfo;
 
 
+/**
+ * Base class for algorithms. The general pattern is that:
+ * 1. algorithm defines arguments (addArgs()) and checks if the values from user are valid (checkArgs())
+ * 2. prepare PDAL pipelines (preparePipelines()) and get them executed in multiple threads
+ * 3. run finalization code (finalize())
+ */
 struct Alg
 {
     // parallel runs (generic)
     int max_threads = -1;
 
+    // a hint whether the pipelines will be executed in streaming mode
     bool isStreaming = true;
 
     // all algs should have some input...
@@ -35,9 +42,23 @@ struct Alg
     bool parseArgs(std::vector<std::string> args);
 
     // interface
+
+    /**
+     * Adds required and optional arguments to "programArgs" member variable.
+     */
     virtual void addArgs() = 0;
+    /**
+     * Called after argument parsing - evaluates whether the input is correct, returns false if not.
+     */
     virtual bool checkArgs() = 0;
+    /**
+     * Prepares pipelines that the algorithm needs to run and populates the given vector.
+     * Pipelines are then run in a thread pool.
+     */
     virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints) = 0;
+    /**
+     * Runs and post-processing code when pipelines are done executing.
+     */
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) {};
 };
 
