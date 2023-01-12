@@ -11,8 +11,15 @@ TODO:
 #include "alg.hpp"
 #include "vpc.hpp"
 
+extern int runTile(std::vector<std::string> arglist);  // tile/tile.cpp
 
+
+// TODO: make it windows/unicode friendly
+//#ifdef _WIN32
+//int wmain( int argc, wchar_t *argv[ ], wchar_t *envp[ ] )
+//#else
 int main(int argc, char* argv[])
+//#endif
 {
 #if 0
     if (argc < 2)
@@ -25,6 +32,7 @@ int main(int argc, char* argv[])
         std::cerr << " - info" << std::endl;
         std::cerr << " - merge" << std::endl;
         std::cerr << " - thin" << std::endl;
+        std::cerr << " - tile" << std::endl;
         std::cerr << " - to_raster" << std::endl;
         std::cerr << " - to_raster_tin" << std::endl;
         std::cerr << " - to_vector" << std::endl;
@@ -33,6 +41,7 @@ int main(int argc, char* argv[])
     }
     std::string cmd = argv[1];
 
+    // TODO: use untwine::fromNative(argv[i])
     std::vector<std::string> args;
     for ( int i = 2; i < argc; ++i )
         args.push_back(argv[i]);
@@ -182,7 +191,7 @@ int main(int argc, char* argv[])
     args.push_back("--input=/home/martin/qgis/point-cloud-sandbox/data/trencin.laz");
     args.push_back("--assign-crs=EPSG:5514");
     args.push_back("--output=/tmp/trencin-fixed-crs.las");
-#else
+#elif 0
     std::string cmd = "translate";
     std::vector<std::string> args;
 
@@ -190,6 +199,14 @@ int main(int argc, char* argv[])
     args.push_back("--transform-crs=EPSG:3857");
     args.push_back("--filter=Classification==2");
     args.push_back("--output=/tmp/trencin-3857.las");
+#else
+  std::string cmd = "tile";
+  std::vector<std::string> args;
+  args.push_back("--length=200");
+  args.push_back("--output=/tmp/tatry-3-tiled");
+  args.push_back("/home/martin/tatry-tiles/tatry_0_1.laz");
+  //args.push_back("/home/martin/tatry-tiles/tatry_0_2.laz");
+  //args.push_back("/home/martin/tatry-tiles/tatry_0_3.laz");
 #endif
 
     std::cout << "command: " << cmd << std::endl;
@@ -247,6 +264,10 @@ int main(int argc, char* argv[])
     {
         Translate translate;
         runAlg(args, translate);
+    }
+    else if (cmd == "tile")
+    {
+      runTile(args);
     }
     else
     {

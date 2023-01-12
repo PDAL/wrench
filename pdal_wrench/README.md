@@ -62,6 +62,14 @@ Merges multiple point cloud files to a single one.
 pdal_wrench merge --output=merged.las data1.las data2.las data3.las
 ```
 
+## tile
+
+Creates tiles from input data. For example to get tiles sized 100x100:
+
+```
+pdal_wrench tile --length=100 --output=/data/tiles data1.las data2.las data3.las
+```
+
 ## thin
 
 Creates a thinned version of the point cloud by only keeping every N-th point. This will only keep every 20th point, so only 5% of points will be in the output:
@@ -124,6 +132,7 @@ When algorithms create derived VPCs, by default they use uncompressed LAS, but `
 | density | multi-threaded | spatial tiling |
 | clip | multi-threaded | per file |
 | merge | not supported | |
+| tile | not yet | |
 | thin | multi-threaded | per file |
 | to_raster | multi-threaded | spatial tiling |
 | to_raster_tin | multi-threaded | spatial tiling |

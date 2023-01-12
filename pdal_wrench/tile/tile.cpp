@@ -29,6 +29,8 @@
 #include "FileProcessor.hpp"
 #include "Las.hpp"
 
+namespace fs = std::filesystem;
+
 
 // PDAL's directoryList had a bug, so we've imported a working
 // version here so that we can still use older PDAL releases.
@@ -394,11 +396,8 @@ static void writeOutputFile(const std::string& filename, pdal::PointViewPtr view
     wopts.add("scale_z", m_b.scale[2]);
     wopts.add("minor_version", 4);
     wopts.add("dataformat_id", m_b.pointFormatId);
-
-    wopts.add("a_srs", "EPSG:5514");
-
-//    if (m_b.opts.a_srs.size())
-//        wopts.add("a_srs", m_b.opts.a_srs);
+    if (m_b.opts.a_srs.size())
+      wopts.add("a_srs", m_b.opts.a_srs);
     if (m_b.opts.metadata)
         wopts.add("pdal_metadata", m_b.opts.metadata);
     w->setOptions(wopts);
@@ -414,7 +413,7 @@ static void writeOutputFile(const std::string& filename, pdal::PointViewPtr view
 
 void addArgs(pdal::ProgramArgs& programArgs, BaseInfo::Options& options, pdal::Arg * &tempArg)
 {
-    programArgs.add("output_dir,o", "Output directory/filename for single-file output",
+    programArgs.add("output,o", "Output directory/filename for single-file output",
         options.outputDir).setPositional();
     programArgs.add("files,i", "Input files/directory", options.inputFiles).setPositional();
     programArgs.add("length,l", "Tile length", options.tileLength, 1000.);
@@ -440,23 +439,6 @@ bool handleOptions(pdal::StringList& arglist, BaseInfo::Options& options)
     addArgs(programArgs, options, tempArg);
     try
     {
-        bool version;
-        bool help;
-        pdal::ProgramArgs hargs;
-        hargs.add("version", "Report the tile-writer version.", version);
-        hargs.add("help", "Print some help.", help);
-
-        hargs.parseSimple(arglist);
-        if (version)
-            std::cout << "tile-writer version (" << 0 << ")\n";  // TODO
-        if (help)
-        {
-            std::cout << "Usage: tile-writer [output file/directory] <options>\n";
-            programArgs.dump(std::cout, 2, 80);
-        }
-        if (help || version)
-            return false;
-
         programArgs.parse(arglist);
 
         if (!tempArg->set())
@@ -604,7 +586,8 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   int outFileIdx = 0;
   for ( std::string binFile : lstBinFiles )
   {
-      std::string outFilename = m_b.opts.outputDir + "/" + std::to_string(outFileIdx) + ".laz";    // TODO: use tile coords!
+      std::string fileStem = fs::path(binFile).stem();
+      std::string outFilename = m_b.opts.outputDir + "/" + fileStem + ".laz";
       outFileIdx++;
 
       m_pool2.add([binFile, outFilename, &m_b]()
@@ -663,26 +646,12 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
 }
 
 
-#ifdef _WIN32
-int wmain( int argc, wchar_t *argv[ ], wchar_t *envp[ ] )
-#else
-int main(int argc, char *argv[])
-#endif
+int runTile(std::vector<std::string> arglist)
 {
-  std::vector<std::string> arglist;
-
-  // Skip the program name.
-  argv++;
-  argc--;
-  while (argc--)
-      arglist.push_back(untwine::fromNative(*argv++));
-
   // originally member vars
   untwine::epf::TileGrid m_grid;
   BaseInfo m_b;
   FileInfo m_srsFileInfo;
-
-  // TODO: tile naming?
 
   // TODO: progress reporting
 

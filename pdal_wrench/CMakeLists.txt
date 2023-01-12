@@ -24,6 +24,15 @@ add_executable(pdal_wrench
     utils.cpp
     vpc.cpp
     #MyThreadPool.cpp
+
+    tile/tile.cpp
+    tile/BufferCache.cpp
+    tile/Cell.cpp
+    tile/FileProcessor.cpp
+    tile/Las.cpp
+    tile/TileGrid.cpp
+    tile/ThreadPool.cpp
+    tile/Writer.cpp
 )
 
 target_include_directories(pdal_wrench
