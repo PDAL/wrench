@@ -215,10 +215,9 @@ int main(int argc, char* argv[])
   std::vector<std::string> args;
   //args.push_back("--threads=1");
   args.push_back("--length=200");
-  args.push_back("--output=/tmp/tatry-3-tiled");
+  args.push_back("--output=/tmp/tatry-3-tiled.vpc");
   args.push_back("/home/martin/tatry-tiles/tatry_0_1.laz");
-  //args.push_back("/home/martin/tatry-tiles/tatry_0_2.laz");
-  //args.push_back("/home/martin/tatry-tiles/tatry_0_3.laz");
+  //args.push_back("/tmp/first.vpc");
 #endif
 
     std::cout << "command: " << cmd << std::endl;

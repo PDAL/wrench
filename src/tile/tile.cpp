@@ -30,6 +30,7 @@
 #include "Las.hpp"
 
 #include "../utils.hpp"
+#include "../vpc.hpp"
 
 namespace fs = std::filesystem;
 
@@ -116,13 +117,13 @@ public:
         std::string tempDir;
         bool preserveTempDir;
         double tileLength;     // length of the square tile
-        size_t fileLimit;
         StringList dimNames;
         std::string a_srs;
         bool metadata;
 
         int max_threads;
         std::string outputFormat;   // las or laz (for now)
+        bool buildVpc = false;
     } opts;
 
     pdal::BOX3D trueBounds;
@@ -166,6 +167,18 @@ static PointCount createFileInfo(const StringList& input, StringList dimNames,
         {
             std::vector<std::string> dirfiles = directoryList(filename);
             filenames.insert(filenames.end(), dirfiles.begin(), dirfiles.end());
+        }
+        else if (ends_with(filename, ".vpc"))
+        {
+            VirtualPointCloud vpc;
+            if (!vpc.read(filename))
+            {
+                throw FatalError("Unable to read virtual point cloud: " + filename);
+            }
+            for (const VirtualPointCloud::File &vpcFile : vpc.files)
+            {
+                filenames.push_back(vpcFile.filename);
+            }
         }
         else
             filenames.push_back(filename);
@@ -455,6 +468,12 @@ bool handleOptions(pdal::StringList& arglist, BaseInfo::Options& options)
         throw FatalError(err.what());
     }
 
+    if (ends_with(options.outputDir, ".vpc"))
+    {
+        options.outputDir = options.outputDir.substr(0, options.outputDir.size()-4);
+        options.buildVpc = true;
+    }
+
     if (!tempArg->set())
     {
         options.tempDir = options.outputDir + "/temp";
@@ -514,10 +533,6 @@ static void tilingPass1(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   // The correct N is often wrong, especially for some areas where things are more dense.
   std::vector<untwine::epf::FileInfo> fileInfos;
   point_count_t totalPoints = createFileInfo(m_b.opts.inputFiles, m_b.opts.dimNames, fileInfos, m_b, m_grid, m_srsFileInfo);
-
-  // This is just a debug thing that will allow the number of input files to be limited.
-  if (fileInfos.size() > m_b.opts.fileLimit)
-      fileInfos.resize(m_b.opts.fileLimit);
 
   // Stick all the dimension names from each input file in a set.
   std::unordered_set<std::string> allDimNames;
@@ -614,6 +629,7 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   m_pool2.trap(true);
 
   std::vector<std::string> lstBinFiles = directoryList(m_b.opts.tempDir);
+  std::vector<std::string> outFiles;
 
   ProgressBar progressBar;
   progressBar.init(lstBinFiles.size());
@@ -623,6 +639,7 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   {
       std::string fileStem = fs::path(binFile).stem();
       std::string outFilename = m_b.opts.outputDir + "/" + fileStem + "." + m_b.opts.outputFormat;
+      outFiles.push_back(outFilename);
       outFileIdx++;
 
       m_pool2.add([binFile, outFilename, &m_b, &progressBar]()
@@ -687,6 +704,14 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
       throw FatalError(errors.front());
 
   progressBar.done();
+
+  if (m_b.opts.buildVpc)
+  {
+      std::vector<std::string> args;
+      args.push_back("--output=" + m_b.opts.outputDir + ".vpc");
+      args.insert(args.end(), outFiles.begin(), outFiles.end());
+      buildVpc(args);
+  }
 }
 
 
