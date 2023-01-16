@@ -122,6 +122,7 @@ public:
         bool metadata;
 
         int max_threads;
+        std::string outputFormat;   // las or laz (for now)
     } opts;
 
     pdal::BOX3D trueBounds;
@@ -390,7 +391,8 @@ static void writeOutputFile(const std::string& filename, pdal::PointViewPtr view
     pdal::Options wopts;
     wopts.add("extra_dims", "all");
     wopts.add("software_id", "Entwine 1.0");
-    wopts.add("compression", "laszip");
+    if (m_b.opts.outputFormat == "laz")
+      wopts.add("compression", "laszip");
     wopts.add("filename", filename);
     wopts.add("offset_x", m_b.offset[0]);
     wopts.add("offset_y", m_b.offset[1]);
@@ -417,11 +419,11 @@ static void writeOutputFile(const std::string& filename, pdal::PointViewPtr view
 
 void addArgs(pdal::ProgramArgs& programArgs, BaseInfo::Options& options, pdal::Arg * &tempArg, pdal::Arg * &threadsArg)
 {
-    programArgs.add("output,o", "Output directory/filename for single-file output",
-        options.outputDir).setPositional();
+    programArgs.add("output,o", "Output directory/filename", options.outputDir);
     programArgs.add("files,i", "Input files/directory", options.inputFiles).setPositional();
     programArgs.add("length,l", "Tile length", options.tileLength, 1000.);
     tempArg = &(programArgs.add("temp_dir", "Temp directory", options.tempDir));
+    programArgs.add("output-format", "Output format (las/laz)", options.outputFormat);
 
     // for debugging
     programArgs.add("preserve_temp_dir", "Do not remove the temp directory before and after processing (for debugging)",
@@ -466,6 +468,15 @@ bool handleOptions(pdal::StringList& arglist, BaseInfo::Options& options)
             // in case the value can't be detected, use something reasonable...
             options.max_threads = 4;
         }
+    }
+    if (options.outputFormat.empty())
+    {
+        options.outputFormat = "las";  // uncompressed by default
+    }
+    else
+    {
+        if (options.outputFormat != "las" && options.outputFormat != "laz")
+            throw FatalError("Unknown output format: " + options.outputFormat);
     }
 
     return true;
@@ -611,7 +622,7 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   for ( const std::string &binFile : lstBinFiles )
   {
       std::string fileStem = fs::path(binFile).stem();
-      std::string outFilename = m_b.opts.outputDir + "/" + fileStem + ".laz";
+      std::string outFilename = m_b.opts.outputDir + "/" + fileStem + "." + m_b.opts.outputFormat;
       outFileIdx++;
 
       m_pool2.add([binFile, outFilename, &m_b, &progressBar]()
