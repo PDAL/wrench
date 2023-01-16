@@ -423,10 +423,10 @@ void addArgs(pdal::ProgramArgs& programArgs, BaseInfo::Options& options, pdal::A
     programArgs.add("length,l", "Tile length", options.tileLength, 1000.);
     tempArg = &(programArgs.add("temp_dir", "Temp directory", options.tempDir));
 
-//    programArgs.add("preserve_temp_dir", "Remove files from the temp directory",
-//        options.preserveTempDir);
-//    programArgs.add("file_limit", "Only load 'file_limit' files, even if more exist",
-//        options.fileLimit, (size_t)10000000);
+    // for debugging
+    programArgs.add("preserve_temp_dir", "Do not remove the temp directory before and after processing (for debugging)",
+        options.preserveTempDir);
+
     programArgs.add("dims", "Dimensions to load. Note that X, Y and Z are always "
         "loaded.", options.dimNames);
     programArgs.add("a_srs", "Assign output SRS",
@@ -556,7 +556,6 @@ static void tilingPass1(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
 
   // TODO: ideally we should check also for space in the output directory (but that's harder to estimate)
 
-#if 1   // TODO: only temporarily disabled to test writing of output
   // Make a writer with NumWriters threads.
   m_writer.reset(new Writer(m_b.opts.tempDir, NumWriters, layout->pointSize()));
 
@@ -588,7 +587,6 @@ static void tilingPass1(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
 
   progressBar.done();
 
-#endif
   // If the FileProcessors had an error, throw.
   std::vector<std::string> errors = m_pool.clearErrors();
   if (errors.size())
@@ -627,13 +625,9 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
 
           Dimension::IdList lasDims = untwine::pdrfDims(m_b.pointFormatId);
           untwine::DimInfoList dims = m_b.dimInfo;
-          // TODO m_extraDims.clear();
           for (untwine::FileDimInfo& fdi : dims)
           {
               fdi.dim = table.layout()->registerOrAssignDim(fdi.name, fdi.type);
-              // TODO
-              //if (!Utils::contains(lasDims, fdi.dim))
-              //    m_extraDims.push_back(DimType(fdi.dim, fdi.type));
           }
           table.finalize();
 
@@ -708,6 +702,10 @@ int runTile(std::vector<std::string> arglist)
 
       tilingPass1(m_b, m_grid, m_srsFileInfo);
       tilingPass2(m_b, m_grid, m_srsFileInfo);
+
+      // clean up temp files
+      if (!m_b.opts.preserveTempDir)
+        pdal::FileUtils::deleteDirectory(m_b.opts.tempDir);
 
       auto stop = std::chrono::high_resolution_clock::now();
       auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
