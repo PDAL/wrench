@@ -13,7 +13,7 @@
 
 #include "FileProcessor.hpp"
 #include "Common.hpp"
-//#include "../untwine/ProgressWriter.hpp"
+#include "../utils.hpp"
 
 #include <pdal/pdal_features.hpp>
 #include <pdal/StageFactory.hpp>
@@ -25,8 +25,8 @@ namespace epf
 {
 
 FileProcessor::FileProcessor(const FileInfo& fi, size_t pointSize, const TileGrid& grid,
-        Writer *writer/*, ProgressWriter& progress*/) :
-    m_fi(fi), m_cellMgr(pointSize, writer), m_grid(grid) //, m_progress(progress)
+        Writer *writer, ProgressBar& progressBar) :
+    m_fi(fi), m_cellMgr(pointSize, writer), m_grid(grid), m_progressBar(progressBar)
 {}
 
 void FileProcessor::run()
@@ -82,14 +82,11 @@ void FileProcessor::run()
             count++;
             countTotal++;
 
-//#if 0  // TODO
             if (count == 100'000) // ProgressWriter::ChunkSize)
             {
-                //m_progress.update();
-                std::cout << countTotal << std::endl;  // this is just within this FP
+                m_progressBar.add(count);
                 count = 0;
             }
-//#endif
 
             return true;
         }
@@ -110,7 +107,7 @@ void FileProcessor::run()
 
     // We normally call update for every CountIncrement points, but at the end, just
     // tell the progress writer the number that we've done since the last update.
-    // TODO m_progress.update(count);
+    m_progressBar.add(count);
 }
 
 } // namespace epf

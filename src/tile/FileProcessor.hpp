@@ -15,10 +15,10 @@
 #include "TileGrid.hpp"
 #include "Cell.hpp"
 
+class ProgressBar;
+
 namespace untwine
 {
-
-class ProgressWriter;
 
 namespace epf
 {
@@ -29,8 +29,8 @@ class Writer;
 class FileProcessor
 {
 public:
-    FileProcessor(const FileInfo& fi, size_t pointSize, const TileGrid& grid, Writer *writer/*,
-        ProgressWriter& progress*/);
+    FileProcessor(const FileInfo& fi, size_t pointSize, const TileGrid& grid, Writer *writer,
+        ProgressBar& progressBar);
 
     Cell *getCell(const TileKey& key);
     void run();
@@ -39,7 +39,7 @@ private:
     FileInfo m_fi;
     CellMgr m_cellMgr;
     TileGrid m_grid;
-    //ProgressWriter& m_progress;
+    ProgressBar& m_progressBar;
 };
 
 } // namespace epf

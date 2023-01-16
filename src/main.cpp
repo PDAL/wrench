@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
     std::string cmd = "info";
     std::vector<std::string> args;
     args.push_back("--input=/tmp/tatry-9.vpc");
-#elif 1
+#elif 0
     std::string cmd = "translate";
     std::vector<std::string> args;
 
@@ -213,6 +213,7 @@ int main(int argc, char* argv[])
 #else
   std::string cmd = "tile";
   std::vector<std::string> args;
+  //args.push_back("--threads=1");
   args.push_back("--length=200");
   args.push_back("--output=/tmp/tatry-3-tiled");
   args.push_back("/home/martin/tatry-tiles/tatry_0_1.laz");

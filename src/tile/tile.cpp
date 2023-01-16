@@ -29,6 +29,8 @@
 #include "FileProcessor.hpp"
 #include "Las.hpp"
 
+#include "../utils.hpp"
+
 namespace fs = std::filesystem;
 
 
@@ -118,6 +120,8 @@ public:
         StringList dimNames;
         std::string a_srs;
         bool metadata;
+
+        int max_threads;
     } opts;
 
     pdal::BOX3D trueBounds;
@@ -411,7 +415,7 @@ static void writeOutputFile(const std::string& filename, pdal::PointViewPtr view
 #include <pdal/util/ProgramArgs.hpp>
 
 
-void addArgs(pdal::ProgramArgs& programArgs, BaseInfo::Options& options, pdal::Arg * &tempArg)
+void addArgs(pdal::ProgramArgs& programArgs, BaseInfo::Options& options, pdal::Arg * &tempArg, pdal::Arg * &threadsArg)
 {
     programArgs.add("output,o", "Output directory/filename for single-file output",
         options.outputDir).setPositional();
@@ -429,27 +433,41 @@ void addArgs(pdal::ProgramArgs& programArgs, BaseInfo::Options& options, pdal::A
         options.a_srs, "");
     programArgs.add("metadata", "Write PDAL metadata to VLR output",
         options.metadata, false);
+
+    threadsArg = &(programArgs.add("threads", "Max number of concurrent threads for parallel runs", options.max_threads));
 }
 
 bool handleOptions(pdal::StringList& arglist, BaseInfo::Options& options)
 {
     pdal::ProgramArgs programArgs;
     pdal::Arg *tempArg;
+    pdal::Arg *threadsArg;
 
-    addArgs(programArgs, options, tempArg);
+    addArgs(programArgs, options, tempArg, threadsArg);
     try
     {
         programArgs.parse(arglist);
-
-        if (!tempArg->set())
-        {
-            options.tempDir = options.outputDir + "/temp";
-        }
     }
     catch (const pdal::arg_error& err)
     {
         throw FatalError(err.what());
     }
+
+    if (!tempArg->set())
+    {
+        options.tempDir = options.outputDir + "/temp";
+    }
+    if (!threadsArg->set())
+    {
+        // use number of cores if not specified by the user
+        options.max_threads = std::thread::hardware_concurrency();
+        if (options.max_threads == 0)
+        {
+            // in case the value can't be detected, use something reasonable...
+            options.max_threads = 4;
+        }
+    }
+
     return true;
 }
 
@@ -478,7 +496,7 @@ static void tilingPass1(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   // pass 1: read input files and write temporary files with raw point data
 
   std::unique_ptr<Writer> m_writer;
-  untwine::ThreadPool m_pool(8);
+  untwine::ThreadPool m_pool(m_b.opts.max_threads);
 
   // Create the file infos. As each info is created, the N x N x N grid is expanded to
   // hold all the points. If the number of points seems too large, N is expanded to N + 1.
@@ -547,16 +565,17 @@ static void tilingPass1(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   std::sort(fileInfos.begin(), fileInfos.end(), [](const FileInfo& f1, const FileInfo& f2)
       { return f1.numPoints > f2.numPoints; });
 
-  //progress.setPointIncrementer(totalPoints, 40);
+  ProgressBar progressBar;
+  progressBar.init(totalPoints);
 
   // Add the files to the processing pool
   m_pool.trap(true, "Unknown error in FileProcessor");
   for (const FileInfo& fi : fileInfos)
   {
       int pointSize = layout->pointSize();
-      m_pool.add([&fi, /*&progress,*/ pointSize, &m_grid, &m_writer]()
+      m_pool.add([&fi, &progressBar, pointSize, &m_grid, &m_writer]()
       {
-          untwine::epf::FileProcessor fp(fi, pointSize, m_grid, m_writer.get() /*, progress*/);
+          untwine::epf::FileProcessor fp(fi, pointSize, m_grid, m_writer.get(), progressBar);
           fp.run();
       });
   }
@@ -566,6 +585,9 @@ static void tilingPass1(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   // Tell the writer that it can exit. stop() will block until the writer threads
   // are finished.  stop() will throw if an error occurred during writing.
   m_writer->stop();
+
+  progressBar.done();
+
 #endif
   // If the FileProcessors had an error, throw.
   std::vector<std::string> errors = m_pool.clearErrors();
@@ -579,21 +601,22 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   //---------
   // pass 2: write the final LAS/LAZ tiles
 
-  untwine::ThreadPool m_pool2(8);
+  untwine::ThreadPool m_pool2(m_b.opts.max_threads);
 
   std::vector<std::string> lstBinFiles = directoryList(m_b.opts.tempDir);
 
+  ProgressBar progressBar;
+  progressBar.init(lstBinFiles.size());
+
   int outFileIdx = 0;
-  for ( std::string binFile : lstBinFiles )
+  for ( const std::string &binFile : lstBinFiles )
   {
       std::string fileStem = fs::path(binFile).stem();
       std::string outFilename = m_b.opts.outputDir + "/" + fileStem + ".laz";
       outFileIdx++;
 
-      m_pool2.add([binFile, outFilename, &m_b]()
+      m_pool2.add([binFile, outFilename, &m_b, &progressBar]()
       {
-          std::cout << "output: " << binFile << std::endl;
-
           PointTable table;
 
           //ABELL - fixme
@@ -621,11 +644,12 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
           assert(fileReader); // TODO
           auto fileSize = fileReader.tellg();
           fileReader.seekg(std::ios::beg);
+
+          // TODO: use a fixed size temporary array instead of reading everything into memory
           std::string content(fileSize,0);
           fileReader.read(&content[0],fileSize);
           char *contentPtr = content.data();
 
-          std::cout << "pt cnt " << (double) fileSize / m_b.pointSize << std::endl;
           ptCnt = fileSize / m_b.pointSize;
 
           pdal::PointId pointId = view->size();
@@ -639,10 +663,14 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
           }
 
           writeOutputFile( outFilename, view, m_b);
+
+          progressBar.add();
       });
   }
 
   m_pool2.join();
+
+  progressBar.done();
 }
 
 
@@ -653,20 +681,26 @@ int runTile(std::vector<std::string> arglist)
   BaseInfo m_b;
   FileInfo m_srsFileInfo;
 
-  // TODO: progress reporting
-
   try
   {
       // parse arguments
       if (!handleOptions(arglist, m_b.opts))
           return 0;
 
+      std::cout << "max threads " << m_b.opts.max_threads << std::endl;
+
       m_grid.setTileLength(m_b.opts.tileLength);
 
       createDirs(m_b.opts);
 
+      auto start = std::chrono::high_resolution_clock::now();
+
       tilingPass1(m_b, m_grid, m_srsFileInfo);
       tilingPass2(m_b, m_grid, m_srsFileInfo);
+
+      auto stop = std::chrono::high_resolution_clock::now();
+      auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+      std::cout << "time " << duration.count()/1000. << " s" << std::endl;
   }
   catch (const FatalError& err)
   {
