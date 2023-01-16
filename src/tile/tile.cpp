@@ -602,6 +602,7 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   // pass 2: write the final LAS/LAZ tiles
 
   untwine::ThreadPool m_pool2(m_b.opts.max_threads);
+  m_pool2.trap(true);
 
   std::vector<std::string> lstBinFiles = directoryList(m_b.opts.tempDir);
 
@@ -638,28 +639,34 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
 
           PointViewPtr view(new pdal::PointView(table));
 
-          // TODO: use file mapping?
           int ptCnt = 0;
           std::ifstream fileReader(binFile,std::ios::binary|std::ios::ate);
-          assert(fileReader); // TODO
+          if (!fileReader)
+          {
+            throw FatalError("Unable to open temporary file: " + binFile);
+          }
           auto fileSize = fileReader.tellg();
           fileReader.seekg(std::ios::beg);
 
-          // TODO: use a fixed size temporary array instead of reading everything into memory
-          std::string content(fileSize,0);
-          fileReader.read(&content[0],fileSize);
-          char *contentPtr = content.data();
-
           ptCnt = fileSize / m_b.pointSize;
 
+          const size_t readChunkSize = 10'000;
+          std::string content(readChunkSize*m_b.pointSize, 0);
+          char *contentPtr = content.data();
+
           pdal::PointId pointId = view->size();
-          for ( int i = 0; i < ptCnt; ++i )
+          for (size_t i = 0; i < ptCnt; i+= readChunkSize)
           {
-              char *base = contentPtr + i * m_b.pointSize;
-              for (const untwine::FileDimInfo& fdi : dims)
-                  view->setField(fdi.dim, fdi.type, pointId,
-                      reinterpret_cast<void *>(base + fdi.offset));
-              pointId++;
+              size_t nPointsToRead = std::min(readChunkSize, ptCnt-i);
+              fileReader.read(contentPtr, nPointsToRead*m_b.pointSize);
+              for (int a = 0; a < nPointsToRead; ++a)
+              {
+                  char *base = contentPtr + a * m_b.pointSize;
+                  for (const untwine::FileDimInfo& fdi : dims)
+                      view->setField(fdi.dim, fdi.type, pointId,
+                          reinterpret_cast<void *>(base + fdi.offset));
+                  pointId++;
+              }
           }
 
           writeOutputFile( outFilename, view, m_b);
@@ -669,6 +676,10 @@ static void tilingPass2(BaseInfo &m_b, TileGrid &m_grid, FileInfo &m_srsFileInfo
   }
 
   m_pool2.join();
+
+  std::vector<std::string> errors = m_pool2.clearErrors();
+  if (errors.size())
+      throw FatalError(errors.front());
 
   progressBar.done();
 }
