@@ -38,7 +38,9 @@ void Thin::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
     argOutputFormat = &programArgs.add("output-format", "Output format (las/laz/copc)", outputFormat);
-    argStep = &programArgs.add("step", "Keep every N-th point", step);
+    argMode = &programArgs.add("mode", " 'every-nth' or 'sample' - either to keep every N-th point or to keep points based on their distance", mode);
+    argStepEveryN = &programArgs.add("step-every-nth", "Keep every N-th point", stepEveryN);
+    argStepSample = &programArgs.add("step-sample", "Minimum spacing between points", stepSample);
 }
 
 bool Thin::checkArgs()
@@ -48,9 +50,31 @@ bool Thin::checkArgs()
         std::cerr << "missing output" << std::endl;
         return false;
     }
-    if (!argStep->set())
+
+    if (!argMode->set())
     {
-        std::cerr << "missing step" << std::endl;
+        std::cerr << "missing mode" << std::endl;
+        return false;
+    }
+    else if (mode == "every-nth")
+    {
+        if (!argStepEveryN->set())
+        {
+            std::cerr << "missing step for every N-th point mode" << std::endl;
+            return false;
+        }
+    }
+    else if (mode == "sample")
+    {
+        if (!argStepSample->set())
+        {
+            std::cerr << "missing step for sampling mode" << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        std::cerr << "unknown mode: " << mode << std::endl;
         return false;
     }
 
@@ -69,26 +93,37 @@ bool Thin::checkArgs()
 }
 
 
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, int step)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::string mode, int stepEveryN, double stepSample)
 {
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
 
     Stage& r = manager->makeReader( tile->inputFilenames[0], "");
 
-    pdal::Options decim_opts;
-    decim_opts.add(pdal::Option("step", step));
-    Stage& f = manager->makeFilter( "filters.decimation", r, decim_opts );
+    Stage *filterPtr = nullptr;
+
+    if (mode == "every-nth")
+    {
+        pdal::Options decim_opts;
+        decim_opts.add(pdal::Option("step", stepEveryN));
+        filterPtr = &manager->makeFilter( "filters.decimation", r, decim_opts );
+    }
+    else if (mode == "sample")
+    {
+        pdal::Options sample_opts;
+        sample_opts.add(pdal::Option("cell", stepSample));
+        filterPtr = &manager->makeFilter( "filters.sample", r, sample_opts );
+    }
 
     pdal::Options writer_opts;
     writer_opts.add(pdal::Option("forward", "all"));  // TODO: maybe we could use lower scale than the original
 
-    Stage& w = manager->makeWriter( tile->outputFilename, "", f, writer_opts);
+    Stage& w = manager->makeWriter( tile->outputFilename, "", *filterPtr, writer_opts);
 
     if (!tile->filterExpression.empty())
     {
         Options filter_opts;
         filter_opts.add(pdal::Option("where", tile->filterExpression));
-        f.addOptions(filter_opts);
+        filterPtr->addOptions(filter_opts);
         w.addOptions(filter_opts);
     }
 
@@ -128,7 +163,7 @@ void Thin::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
 
             tileOutputFiles.push_back(tile.outputFilename);
 
-            pipelines.push_back(pipeline(&tile, step));
+            pipelines.push_back(pipeline(&tile, mode, stepEveryN, stepSample));
         }
     }
     else
@@ -136,7 +171,7 @@ void Thin::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
         ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
-        pipelines.push_back(pipeline(&tile, step));
+        pipelines.push_back(pipeline(&tile, mode, stepEveryN, stepSample));
     }
 }
 

@@ -209,12 +209,16 @@ struct Thin : public Alg
 {
     // parameters from the user
     std::string outputFile;
-    int step;  // keep every N-th point
+    std::string mode;  // "every-nth" or "sample"
+    int stepEveryN;  // keep every N-th point
+    double stepSample;  // cell size for Poisson sampling
     std::string outputFormat;  // las / laz / copc
 
     // args - initialized in addArgs()
     pdal::Arg* argOutput = nullptr;
-    pdal::Arg* argStep = nullptr;
+    pdal::Arg* argMode = nullptr;
+    pdal::Arg* argStepEveryN = nullptr;
+    pdal::Arg* argStepSample = nullptr;
     pdal::Arg* argOutputFormat = nullptr;
 
     std::vector<std::string> tileOutputFiles;
