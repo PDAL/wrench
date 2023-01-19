@@ -78,9 +78,55 @@ void Info::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
         MetadataNode layout;
         MetadataNode meta = getReaderMetadata(inputFile, &layout);
 
-        std::string crs = meta.findChild("srs").findChild("wkt").value(); // TODO: nicer printing (e.g. only CRS name + EPSG ID)
-        if (crs.empty())
+        std::string crs;
+        std::string units;
+        std::string crsWkt = meta.findChild("srs").findChild("compoundwkt").value();
+        if (crsWkt.empty())
+        {
             crs = "(unknown)";
+            units = "(unknown)";
+        }
+        else
+        {
+            // this code is quite clumsy... most of what we need is handled by pdal::SpatialReference, but:
+            // - there's no API to get human readable name of the CRS
+            // - https://github.com/PDAL/PDAL/issues/3943 - SpatialReference::identifyVerticalEPSG() is broken
+            // - https://github.com/PDAL/PDAL/issues/3946 - SpatialReference::getHorizontalUnits() may return incorrect units
+            pdal::SpatialReference sr(crsWkt);
+            std::string wktHoriz = sr.getHorizontal();
+            std::string wktVert = sr.getVertical();
+            CRS c(crsWkt);
+            CRS ch(wktHoriz);
+            CRS cv(wktVert);
+            std::string crsEpsg = c.identifyEPSG();
+            std::string crsHorizEpsg = sr.identifyHorizontalEPSG();
+            std::string crsVertEpsg = cv.identifyEPSG();
+
+            // CRS description and EPSG codes if available
+            crs = c.name();
+            if (!crsEpsg.empty())
+              crs += " (EPSG:" + crsEpsg + ")";
+            else if (!crsHorizEpsg.empty() && !crsVertEpsg.empty())
+              crs += " (EPSG:" + crsHorizEpsg + " + EPSG:" + crsVertEpsg + ")";
+            else if (!crsHorizEpsg.empty())
+              crs += " (EPSG:" + crsHorizEpsg +  " + ?)";
+
+            if (wktVert.empty())
+            {
+              crs += "  (vertical CRS missing!)";
+            }
+
+            // horizontal and vertical units
+            std::string unitsHoriz = ch.units();
+            std::string unitsVert = cv.units();
+            if (unitsHoriz == unitsVert)
+              units = unitsHoriz;
+            else
+            {
+              units = "horizontal=" + unitsHoriz + "  vertical=" + unitsVert;
+            }
+            // TODO: add a warning when horizontal and vertical units do not match (?)
+        }
 
         std::cout << "LAS           " << meta.findChild("major_version").value() << "." << meta.findChild("minor_version").value() << std::endl;
         std::cout << "point format  " << meta.findChild("dataformat_id").value() << std::endl;
@@ -90,6 +136,7 @@ void Info::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
         std::cout << "extent        " << meta.findChild("minx").value() << " " << meta.findChild("miny").value() << " " << meta.findChild("minz").value() << std::endl;
         std::cout << "              " << meta.findChild("maxx").value() << " " << meta.findChild("maxy").value() << " " << meta.findChild("maxz").value() << std::endl;
         std::cout << "crs           " << crs << std::endl;
+        std::cout << "units         " << units << std::endl;
         // TODO: file size in MB ?
 
         // TODO: possibly show extra metadata: (probably --verbose mode)

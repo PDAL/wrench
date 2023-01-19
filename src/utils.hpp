@@ -111,6 +111,69 @@ struct ParallelJobInfo
 };
 
 
+
+#include <ogr_spatialref.h>
+
+// few CRS-related functions that cover in addition to what pdal::SpatialReference doess not provide
+struct CRS
+{
+public:
+  // construct CRS using a well-known text definition (WKT)
+  CRS(std::string s = "")
+  {
+    ptr.reset( static_cast<OGRSpatialReference*>(OSRNewSpatialReference(s.size() ? s.c_str() : nullptr)) );
+  }
+
+  std::string name() { return ptr ? ptr->GetName() : ""; }
+
+  // workaround for https://github.com/PDAL/PDAL/issues/3943
+  std::string identifyEPSG()
+  {
+    if (!ptr)
+        return "";
+
+    if (const char* c = ptr->GetAuthorityCode(nullptr))
+        return std::string(c);
+
+    if (ptr->AutoIdentifyEPSG() == OGRERR_NONE)
+    {
+        if (const char* c = ptr->GetAuthorityCode(nullptr))
+            return std::string(c);
+    }
+
+    return "";
+  }
+
+  // workaround for https://github.com/PDAL/PDAL/issues/3946
+  std::string units()
+  {
+    if (!ptr)
+        return std::string();
+
+    const char* units(nullptr);
+
+    // The returned value remains internal to the OGRSpatialReference
+    // and should not be freed, or modified. It may be invalidated on
+    // the next OGRSpatialReference call.
+    double u = ptr->GetLinearUnits(&units);
+    std::string tmp(units);
+    Utils::trim(tmp);
+    return tmp;
+  }
+
+private:
+  struct OGRDeleter
+  {
+      void operator()(OGRSpatialReference* o)
+      {
+          OSRDestroySpatialReference(o);
+      };
+  };
+
+  std::unique_ptr<OGRSpatialReference, OGRDeleter> ptr;
+};
+
+
 // GDAL-style progress bar:
 // 0...10...20...30...40...50...60...70...80...90...100 - done.
 struct ProgressBar
