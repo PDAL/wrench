@@ -79,6 +79,8 @@ bool VirtualPointCloud::read(std::string filename)
         return false;
     }
 
+    crsWkt = data["metadata"]["crs"];
+
     for (auto& f : data["files"])
     {
         File vpcf;
@@ -124,7 +126,9 @@ bool VirtualPointCloud::write(std::string filename)
         });
     }
 
-    nlohmann::ordered_json jMeta = {};  // TODO
+    nlohmann::ordered_json jMeta = {
+      { "crs", crsWkt },
+    };
 
     nlohmann::ordered_json j = { { "vpc", "1.0.0" }, { "metadata", jMeta }, { "files", jFiles } };
 
@@ -156,7 +160,16 @@ void buildVpc(std::vector<std::string> args)
     std::cout << "input " << inputFiles.size() << std::endl;
     std::cout << "output " << outputFile << std::endl;
 
+    if (inputFiles.empty())
+    {
+      std::cerr << "No input files!" << std::endl;
+      return;
+    }
+
+    // TODO: would be nice to support input directories too (recursive)
+
     VirtualPointCloud vpc;
+    std::set<std::string> vpcCrsWkt;
 
     for (const std::string &inputFile : inputFiles)
     {
@@ -171,11 +184,24 @@ void buildVpc(std::vector<std::string> args)
                 n.findChild("maxz").value<double>()
         );
 
+        std::string crsWkt = n.findChild("srs").findChild("compoundwkt").value();
+        vpcCrsWkt.insert(crsWkt);
+
         VirtualPointCloud::File f;
         f.filename = inputFile;
         f.count = cnt;
         f.bbox = bbox;
         vpc.files.push_back(f);
+    }
+
+    if (vpcCrsWkt.size() == 1)
+    {
+        vpc.crsWkt = *vpcCrsWkt.begin();
+    }
+    else
+    {
+        std::cout << "found a mixture of multiple CRS in input files (" << vpcCrsWkt.size() << ")" << std::endl;
+        vpc.crsWkt = "_mix_";
     }
 
     vpc.dump();

@@ -40,6 +40,12 @@ bool runAlg(std::vector<std::string> args, Alg &alg)
                 return false;
             totalPoints = vpc.totalPoints();
             bounds = vpc.box3d();
+
+            if (alg.needsSingleCrs && vpc.crsWkt == "_mix_")
+            {
+                std::cerr << "Algorithm requires that all inputs are in the same CRS. Please transform them to a single CRS first." << std::endl;
+                return false;
+            }
         }
         else
         {

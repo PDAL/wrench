@@ -42,6 +42,9 @@ struct Alg
 
     std::string filterExpression;  // optional argument to limit input points
 
+    bool needsSingleCrs = true;  // most algs assume that all input files in VPC are in the same CRS,
+                                 // and only few exceptions (e.g. info) tolerate mixture of multiple CRS
+
     pdal::ProgramArgs programArgs;
 
     Alg() = default;
@@ -81,6 +84,7 @@ bool runAlg(std::vector<std::string> args, Alg &alg);
 
 struct Info : public Alg
 {
+    Info() { needsSingleCrs = false; }
 
     // impl
     virtual void addArgs() override;

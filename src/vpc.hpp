@@ -34,6 +34,7 @@ struct VirtualPointCloud
     };
 
     std::vector<File> files;
+    std::string crsWkt;  // valid WKT for CRS of all files (or empty string if undefined, or "_mix_" if a mixture of CRS was seen)
 
     void clear();
     void dump();
