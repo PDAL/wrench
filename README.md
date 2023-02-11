@@ -17,6 +17,25 @@ Some may ask why not let users build their pipelines in PDAL directly. There are
 - ease of use: PDAL is great for advanced users, but not everyone finds it easy to manually craft JSON files with pipelines, study manuals of the many stages and read details about file formats involved
 - parallel execution: PDAL runs pipelines in a single thread - only one CPU gets to do the work normally - and users need to implement their own parallelism if they wish so
 
+# How to build
+
+You will need: PDAL >= 2.5 and GDAL >= 3.0, both with development files.
+
+Building is done with CMake:
+```
+mkdir build
+cd build
+cmake ..
+make
+```
+
+If PDAL is not installed in the usual system paths (e.g. in `/usr`), then add `PDAL_DIR` parameter when running CMake - for example if your PDAL installation dir is `/home/martin/pdal-inst`:
+```
+cmake -DPDAL_DIR=/home/martin/pdal-inst/lib/cmake/PDAL ..
+```
+
+# Commands
+
 ## info
 
 Prints basic metadata from the point cloud file:
