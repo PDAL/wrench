@@ -32,7 +32,7 @@ extern int runTile(std::vector<std::string> arglist);  // tile/tile.cpp
 int main(int argc, char* argv[])
 //#endif
 {
-#if 0
+#if 1
     if (argc < 2)
     {
         std::cerr << "need to specify command:" << std::endl;
@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
     // for good alignment of input and output
     //args.push_back("--tile-origin-x=377250");
     //args.push_back("--tile-origin-y=5441420");
-#elif 1
+#elif 0
     std::string cmd = "thin";
     std::vector<std::string> args;
 
