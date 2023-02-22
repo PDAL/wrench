@@ -25,8 +25,16 @@ using namespace pdal;
 bool runAlg(std::vector<std::string> args, Alg &alg)
 {
 
-    if ( !alg.parseArgs(args) )
+    try
+    {
+        if ( !alg.parseArgs(args) )
+            return false;
+    }
+    catch (const pdal::arg_error& err)
+    {
+        std::cerr << "Failed to parse arguments: " << err.what() << std::endl;
         return false;
+    }
 
     point_count_t totalPoints = 0;
     BOX3D bounds;

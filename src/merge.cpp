@@ -35,7 +35,7 @@ void Merge::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output virtual point cloud file", outputFile);
     // we set hasSingleInput=false so the default "input,i" argument is not added
-    &programArgs.add("files,f", "input files", inputFiles).setPositional();
+    programArgs.add("files", "input files", inputFiles).setPositional();
 }
 
 bool Merge::checkArgs()
