@@ -107,10 +107,18 @@ pdal_wrench tile --length=100 --output=/data/tiles data1.las data2.las data3.las
 
 ## thin
 
-Creates a thinned version of the point cloud by only keeping every N-th point. This will only keep every 20th point, so only 5% of points will be in the output:
+Creates a thinned version of the point cloud by only keeping every N-th point (`every-nth` mode) or keep points based on their distance (`sample` mode).
+
+For example, to only keep every 20th point, so only 5% of points will be in the output:
 
 ```
-pdal_wrench thin --output=thinned.las --step=20 data.las
+pdal_wrench thin --output=thinned.las --mode=every-nth --step-every-nth=20 data.las
+```
+
+Alternatively, to sample points using Poisson sampling of the input:
+
+```
+pdal_wrench thin --output=thinned.las --mode=sample --step-sample=20 data.las
 ```
 
 ## to_raster
