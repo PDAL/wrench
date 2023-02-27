@@ -35,7 +35,7 @@ memory requirements to keep in mind:
 void ToRasterTin::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
-    argRes = &programArgs.add("resolution,r", "Resolution of the density grid", resolution);
+    argRes = &programArgs.add("resolution,r", "Resolution of the output grid", resolution);
     argTileSize = &programArgs.add("tile-size", "Size of a tile for parallel runs", tileAlignment.tileSize);
     argTileOriginX = &programArgs.add("tile-origin-x", "X origin of a tile for parallel runs", tileAlignment.originX);
     argTileOriginY = &programArgs.add("tile-origin-y", "Y origin of a tile for parallel runs", tileAlignment.originY);

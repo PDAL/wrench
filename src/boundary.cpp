@@ -30,7 +30,7 @@ using namespace pdal;
 
 void Boundary::addArgs()
 {
-    argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
+    argOutput = &programArgs.add("output,o", "Output vector file", outputFile);
 }
 
 bool Boundary::checkArgs()

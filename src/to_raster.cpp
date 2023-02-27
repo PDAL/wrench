@@ -29,7 +29,7 @@ namespace fs = std::filesystem;
 void ToRaster::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
-    argRes = &programArgs.add("resolution,r", "Resolution of the density grid", resolution);
+    argRes = &programArgs.add("resolution,r", "Resolution of the output grid", resolution);
     argAttribute = &programArgs.add("attribute,a", "Attribute for output", attribute);
 
     // TODO: add support for window_size / fill holes
