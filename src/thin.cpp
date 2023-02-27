@@ -36,7 +36,7 @@ namespace fs = std::filesystem;
 
 void Thin::addArgs()
 {
-    argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
+    argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
     argOutputFormat = &programArgs.add("output-format", "Output format (las/laz/copc)", outputFormat);
     argMode = &programArgs.add("mode", " 'every-nth' or 'sample' - either to keep every N-th point or to keep points based on their distance", mode);
     argStepEveryN = &programArgs.add("step-every-nth", "Keep every N-th point", stepEveryN);

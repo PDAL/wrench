@@ -33,7 +33,7 @@ namespace fs = std::filesystem;
 
 void Clip::addArgs()
 {
-    argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
+    argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
     argOutputFormat = &programArgs.add("output-format", "Output format (las/laz/copc)", outputFormat);
     argPolygon = &programArgs.add("polygon,p", "Input polygon vector file", polygonFile);
 }

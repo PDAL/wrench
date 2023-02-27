@@ -33,7 +33,7 @@ namespace fs = std::filesystem;
 
 void ToVector::addArgs()
 {
-    argOutput = &programArgs.add("output,o", "Output raster file", outputFile);
+    argOutput = &programArgs.add("output,o", "Output vector file", outputFile);
     programArgs.add("attribute", "Attributes to include", attributes);
 }
 
