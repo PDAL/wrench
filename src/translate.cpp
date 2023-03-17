@@ -36,7 +36,7 @@ void Translate::addArgs()
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
     argOutputFormat = &programArgs.add("output-format", "Output format (las/laz/copc)", outputFormat);
     programArgs.add("assign-crs", "Assigns CRS to data (no reprojection)", assignCrs);
-    programArgs.add("transform-crs", "Transforms (reprojects) data to anoter CRS", transformCrs);
+    programArgs.add("transform-crs", "Transforms (reprojects) data to another CRS", transformCrs);
 }
 
 bool Translate::checkArgs()
