@@ -99,6 +99,7 @@ struct Translate : public Alg
     std::string outputFile;
     std::string assignCrs;
     std::string transformCrs;
+    std::string transformCoordOp;
     std::string outputFormat;  // las / laz / copc
 
     // args - initialized in addArgs()
