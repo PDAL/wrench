@@ -150,9 +150,13 @@ struct Boundary : public Alg
 {
     // parameters from the user
     std::string outputFile;
+    double resolution = 0;    // cell size of the hexbin filter (if zero, it will be estimated by PDAL)
+    int pointsThreshold = 0;  // min. number of points in order to have a cell considered occupied
 
     // args - initialized in addArgs()
     pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argResolution = nullptr;
+    pdal::Arg* argPointsThreshold = nullptr;
 
     // impl
     virtual void addArgs() override;

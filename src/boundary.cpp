@@ -31,6 +31,10 @@ using namespace pdal;
 void Boundary::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output vector file", outputFile);
+
+    argResolution = &programArgs.add("resolution", "Resolution of cells used to calculate boundary. "
+                                     "If not specified, it will be estimated from first 5000 points.", resolution);
+    argPointsThreshold = &programArgs.add("threshold", "Minimal number of points in a cell to consider cell occupied.", pointsThreshold);
 }
 
 bool Boundary::checkArgs()
@@ -40,10 +44,22 @@ bool Boundary::checkArgs()
         std::cerr << "missing output" << std::endl;
         return false;
     }
+
+    if (!argResolution->set() && argPointsThreshold->set())
+    {
+        std::cerr << "Resolution argument must be set when points threshold is set." << std::endl;
+        return false;
+    }
+
+    if (!argPointsThreshold->set())
+    {
+        pointsThreshold = 15;   // the same default as in PDAL for HexBin filter
+    }
+
     return true;
 }
 
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, double resolution, int pointsThreshold)
 {
     assert(tile);
     assert(tile->inputFilenames.size() == 1);
@@ -57,8 +73,11 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
     // btw. if threshold=0, there are still missing points because of simplification (smooth=True)
 
     pdal::Options hexbin_opts;
-    hexbin_opts.add(pdal::Option("edge_size", 5));
-    hexbin_opts.add(pdal::Option("threshold", 0));
+    if (resolution != 0)
+    {
+       hexbin_opts.add(pdal::Option("edge_size", resolution));
+    }
+    hexbin_opts.add(pdal::Option("threshold", pointsThreshold));
 
     if (!tile->filterExpression.empty())
     {
@@ -82,14 +101,14 @@ void Boundary::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& p
         {
             ParallelJobInfo tile(ParallelJobInfo::FileBased, BOX2D(), filterExpression);
             tile.inputFilenames.push_back(f.filename);
-            pipelines.push_back(pipeline(&tile));
+            pipelines.push_back(pipeline(&tile, resolution, pointsThreshold));
         }
     }
     else
     {
         ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression);
         tile.inputFilenames.push_back(inputFile);
-        pipelines.push_back(pipeline(&tile));
+        pipelines.push_back(pipeline(&tile, resolution, pointsThreshold));
     }
 }
 
