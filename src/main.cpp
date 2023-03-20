@@ -56,8 +56,6 @@ int main(int argc, char* argv[])
     for ( int i = 2; i < argc; ++i )
         args.push_back(argv[i]);
 
-    std::cout << "command: " << cmd << std::endl;
-
     if (cmd == "density")
     {
         Density density;

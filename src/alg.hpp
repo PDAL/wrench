@@ -45,6 +45,8 @@ struct Alg
     bool needsSingleCrs = true;  // most algs assume that all input files in VPC are in the same CRS,
                                  // and only few exceptions (e.g. info) tolerate mixture of multiple CRS
 
+    bool verbose = false;        // write extra debugging output from the algorithm
+
     pdal::ProgramArgs programArgs;
 
     Alg() = default;
