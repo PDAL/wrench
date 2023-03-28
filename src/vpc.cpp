@@ -156,7 +156,18 @@ bool VirtualPointCloud::write(std::string filename)
     std::vector<nlohmann::ordered_json> jFiles;
     for ( const File &f : files )
     {
-        fs::path fRelative = fs::relative(f.filename, outputPath);
+        std::string assetFilename;
+        if (Utils::startsWith(f.filename, "http://") || Utils::startsWith(f.filename, "https://"))
+        {
+            // keep remote URLs as they are
+            assetFilename = f.filename;
+        }
+        else
+        {
+            // turn local paths to relative
+            fs::path fRelative = fs::relative(f.filename, outputPath);
+            assetFilename = "./" + fRelative.string();
+        }
         std::string fileId = fs::path(f.filename).stem().string();  // TODO: we should make sure the ID is unique
 
         // bounding box in WGS 84: reproject if possible, or keep it as is
@@ -218,7 +229,7 @@ bool VirtualPointCloud::write(std::string filename)
             { "bbox", { bboxWgs84.minx, bboxWgs84.miny, bboxWgs84.minz, bboxWgs84.maxx, bboxWgs84.maxy, bboxWgs84.maxz } },
             { "properties", props },
             { "links", links },
-            { "assets", { { "file", "./" + fRelative.string() } } },
+            { "assets", { { "file", assetFilename } } },
 
         });
 
