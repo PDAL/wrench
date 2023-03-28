@@ -105,7 +105,7 @@ bool VirtualPointCloud::read(std::string filename)
         nlohmann::json firstAsset = *f["assets"].begin();
 
         File vpcf;
-        vpcf.filename = firstAsset;
+        vpcf.filename = firstAsset["href"];
         vpcf.count = f["properties"]["pc:count"];
         vpcf.crsWkt = f["properties"]["proj:wkt2"];
         vpcCrsWkt.insert(vpcf.crsWkt);
@@ -214,6 +214,10 @@ bool VirtualPointCloud::write(std::string filename)
         };
         nlohmann::json links = json::array();
 
+        nlohmann::json asset = {
+            { "href", assetFilename },
+        };
+
         jFiles.push_back(
         {
             { "type", "Feature" },
@@ -229,7 +233,7 @@ bool VirtualPointCloud::write(std::string filename)
             { "bbox", { bboxWgs84.minx, bboxWgs84.miny, bboxWgs84.minz, bboxWgs84.maxx, bboxWgs84.maxy, bboxWgs84.maxz } },
             { "properties", props },
             { "links", links },
-            { "assets", { { "file", assetFilename } } },
+            { "assets", { { "data", asset } } },
 
         });
 
