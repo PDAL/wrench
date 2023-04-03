@@ -159,20 +159,26 @@ void geometryToJson(const Geometry &geom, const BOX3D &bbox, nlohmann::json &jso
 
 bool VirtualPointCloud::write(std::string filename)
 {
-    std::ofstream outputJson(filename);
+    std::string filenameAbsolute = filename;
+    if (!fs::path(filename).is_absolute())
+    {
+        filenameAbsolute = fs::absolute(filename);
+    }
+
+    std::ofstream outputJson(filenameAbsolute);
     if (!outputJson.good())
     {
-        std::cerr << "Failed to create file: " << filename << std::endl;
+        std::cerr << "Failed to create file: " << filenameAbsolute << std::endl;
         return false;
     }
 
-    fs::path outputPath = fs::path(filename).parent_path();
+    fs::path outputPath = fs::path(filenameAbsolute).parent_path();
 
     std::vector<nlohmann::ordered_json> jFiles;
     for ( const File &f : files )
     {
         std::string assetFilename;
-        if (Utils::startsWith(f.filename, "http://") || Utils::startsWith(f.filename, "https://"))
+        if (pdal::Utils::isRemote(f.filename))
         {
             // keep remote URLs as they are
             assetFilename = f.filename;
@@ -339,8 +345,15 @@ void buildVpc(std::vector<std::string> args)
 
     for (const std::string &inputFile : inputFiles)
     {
+        std::string inputFileAbsolute = inputFile;
+        if (!pdal::Utils::isRemote(inputFile) && !fs::path(inputFile).is_absolute())
+        {
+            // convert to absolute path using the current path
+            inputFileAbsolute = fs::absolute(inputFile);
+        }
+
         MetadataNode layout;
-        MetadataNode n = getReaderMetadata(inputFile, &layout);
+        MetadataNode n = getReaderMetadata(inputFileAbsolute, &layout);
         point_count_t cnt = n.findChild("count").value<point_count_t>();
         BOX3D bbox(
                 n.findChild("minx").value<double>(),
@@ -357,7 +370,7 @@ void buildVpc(std::vector<std::string> args)
         int year = n.findChild("creation_year").value<int>();
 
         VirtualPointCloud::File f;
-        f.filename = inputFile;
+        f.filename = inputFileAbsolute;
         f.count = cnt;
         f.bbox = bbox;
         f.crsWkt = crsWkt;
