@@ -12,6 +12,7 @@
 
 #include "utils.hpp"
 
+#include <filesystem>
 #include <iostream>
 #include <chrono>
 
@@ -196,7 +197,7 @@ bool rasterTilesToCog(const std::vector<std::string> &inputFiles, const std::str
     rasterVrtToCog(ds, outputFile);
     GDALClose(ds);
 
-    // TODO: remove VRT + partial tifs after gdal_translate?
+    std::filesystem::remove(outputVrt);
 
     return true;
 }

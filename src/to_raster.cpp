@@ -319,8 +319,13 @@ void ToRaster::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& p
 
 void ToRaster::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
 {
-    if (pipelines.size() > 1)
+    if (!tileOutputFiles.empty())
     {
         rasterTilesToCog(tileOutputFiles, outputFile);
+
+        // clean up the temporary directory
+        fs::path outputParentDir = fs::path(outputFile).parent_path();
+        fs::path outputSubdir = outputParentDir / fs::path(outputFile).stem();
+        fs::remove_all(outputSubdir);
     }
 }
