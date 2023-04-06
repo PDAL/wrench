@@ -104,12 +104,12 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, double r
        hexbin_opts.add(pdal::Option("edge_size", resolution));
     }
     hexbin_opts.add(pdal::Option("threshold", pointsThreshold));
-    manager->makeFilter( "filters.hexbin", *last, hexbin_opts );
+    (void)manager->makeFilter( "filters.hexbin", *last, hexbin_opts );
 
     return manager;
 }
 
-void Boundary::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &bounds, point_count_t &totalPoints)
+void Boundary::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &, point_count_t &)
 {
     if (ends_with(inputFile, ".vpc"))
     {
