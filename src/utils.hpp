@@ -102,7 +102,7 @@ struct ParallelJobInfo
     // B. multi input with box     (anything)   -- tile strategy
     //    - all input files are processed, but with filtering applied
     //    - COPC: filtering inside readers.copc with "bounds" argument
-    //    - LAS/LAZ: filter either using CropFilter after reader -or- "where" 
+    //    - LAS/LAZ: filter either using CropFilter after reader -or- "where"
 
     // streaming algs:
     // - multi-las: if not overlapping:  mode A
@@ -156,7 +156,7 @@ public:
     // The returned value remains internal to the OGRSpatialReference
     // and should not be freed, or modified. It may be invalidated on
     // the next OGRSpatialReference call.
-    double u = ptr->GetLinearUnits(&units);
+    (void)ptr->GetLinearUnits(&units);
     std::string tmp(units);
     Utils::trim(tmp);
     return tmp;

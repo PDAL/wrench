@@ -80,15 +80,15 @@ bool runAlg(std::vector<std::string> args, Alg &alg)
 
 
 bool Alg::parseArgs(std::vector<std::string> args)
-{ 
+{
     pdal::Arg* argInput = nullptr;
     if (hasSingleInput)
     {
         argInput = &programArgs.add("input,i", "Input point cloud file", inputFile);
     }
 
-    pdal::Arg& argFilter = programArgs.add("filter,f", "Filter expression for input data", filterExpression);
-    pdal::Arg& argBounds = programArgs.add("bounds", "Filter by rectangle", filterBounds);
+    (void)programArgs.add("filter,f", "Filter expression for input data", filterExpression);
+    (void)programArgs.add("bounds", "Filter by rectangle", filterBounds);
 
     addArgs();  // impl in derived
 
