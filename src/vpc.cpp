@@ -12,16 +12,18 @@
 
 #include <iostream>
 #include <filesystem>
+#include <thread>
 namespace fs = std::filesystem;
 
 #include "vpc.hpp"
 #include "utils.hpp"
 
+#include <pdal/Polygon.hpp>
+#include <pdal/Stage.hpp>
 #include <pdal/util/ProgramArgs.hpp>
 
 #include "nlohmann/json.hpp"
 
-#include <pdal/Polygon.hpp>
 
 
 using json = nlohmann::json;
@@ -110,6 +112,14 @@ bool VirtualPointCloud::read(std::string filename)
         vpcf.crsWkt = f["properties"]["proj:wkt2"];
         vpcCrsWkt.insert(vpcf.crsWkt);
 
+        // read boundary geometry
+        nlohmann::json nativeGeometry = f["properties"]["proj:geometry"];
+        std::stringstream sstream;
+        sstream << std::setw(2) << nativeGeometry << std::endl;
+        std::string wkt = sstream.str();
+        pdal::Geometry nativeGeom(sstream.str());
+        vpcf.boundaryWkt = nativeGeom.wkt();
+
         nlohmann::json nativeBbox = f["properties"]["proj:bbox"];
         vpcf.bbox = BOX3D(
             nativeBbox[0].get<double>(), nativeBbox[1].get<double>(), nativeBbox[2].get<double>(),
@@ -124,6 +134,20 @@ bool VirtualPointCloud::read(std::string filename)
         for (auto &schemaItem : f["properties"]["pc:schemas"])
         {
             vpcf.schema.push_back(VirtualPointCloud::SchemaItem(schemaItem["name"], schemaItem["type"], schemaItem["size"].get<int>()));
+        }
+
+        // read stats
+        for (auto &statsItem : f["properties"]["pc:statistics"])
+        {
+            vpcf.stats.push_back(VirtualPointCloud::StatsItem(
+                                    statsItem["name"],
+                                    statsItem["position"],
+                                    statsItem["average"],
+                                    statsItem["count"],
+                                    statsItem["maximum"],
+                                    statsItem["minimum"],
+                                    statsItem["stddev"],
+                                    statsItem["variance"]));
         }
 
         files.push_back(vpcf);
@@ -191,20 +215,21 @@ bool VirtualPointCloud::write(std::string filename)
         }
         std::string fileId = fs::path(f.filename).stem().string();  // TODO: we should make sure the ID is unique
 
+        pdal::Geometry boundary = !f.boundaryWkt.empty() ? pdal::Geometry(f.boundaryWkt) : pdal::Polygon(f.bbox);
+
         // use bounding box as the geometry
-        // TODO: use calculated boundary polygon when available
         nlohmann::json jsonGeometry, jsonBbox;
-        geometryToJson(pdal::Polygon(f.bbox), f.bbox, jsonGeometry, jsonBbox);
+        geometryToJson(boundary, f.bbox, jsonGeometry, jsonBbox);
 
         // bounding box in WGS 84: reproject if possible, or keep it as is
         nlohmann::json jsonGeometryWgs84 = jsonGeometry, jsonBboxWgs84 = jsonBbox;
         if (!f.crsWkt.empty())
         {
-            pdal::Polygon p(f.bbox);
-            p.setSpatialReference(pdal::SpatialReference(f.crsWkt));
-            if (p.transform("EPSG:4326"))
+            pdal::Geometry boundaryWgs84 = boundary;
+            boundaryWgs84.setSpatialReference(pdal::SpatialReference(f.crsWkt));
+            if (boundaryWgs84.transform("EPSG:4326"))
             {
-                geometryToJson(p, p.bounds(), jsonGeometryWgs84, jsonBboxWgs84);
+                geometryToJson(boundaryWgs84, boundaryWgs84.bounds(), jsonGeometryWgs84, jsonBboxWgs84);
             }
         }
 
@@ -231,13 +256,32 @@ bool VirtualPointCloud::write(std::string filename)
           { "pc:encoding", "?" },   // TODO: https://github.com/stac-extensions/pointcloud/issues/6
           { "pc:schemas", schemas },
 
-          // TODO: write pc:statistics if we have it (optional)
-
           // projection extension properties (none are required)
           { "proj:wkt2", f.crsWkt },
           { "proj:geometry", jsonGeometry },
           { "proj:bbox", jsonBbox },
         };
+
+        if (!f.stats.empty())
+        {
+            nlohmann::json statsArray = json::array();
+            for (const VirtualPointCloud::StatsItem &s : f.stats)
+            {
+                nlohmann::json stat = {
+                    { "name", s.name },
+                    { "position", s.position },
+                    { "average", s.average },
+                    { "count", s.count },
+                    { "maximum", s.maximum },
+                    { "minimum", s.minimum },
+                    { "stddev", s.stddev },
+                    { "variance", s.variance },
+                };
+                statsArray.push_back(stat);
+            }
+            props["pc:statistics"] = statsArray;
+        }
+
         nlohmann::json links = json::array();
 
         nlohmann::json asset = {
@@ -315,10 +359,19 @@ void buildVpc(std::vector<std::string> args)
 {
     std::string outputFile;
     std::vector<std::string> inputFiles;
+    bool boundaries = false;
+    bool stats = false;
+    int max_threads = -1;
+    bool verbose = false;
 
     ProgramArgs programArgs;
     programArgs.add("output,o", "Output virtual point cloud file", outputFile);
     programArgs.add("files,f", "input files", inputFiles).setPositional();
+    programArgs.add("boundary", "Calculate boundary polygons from data", boundaries);
+    programArgs.add("stats", "Calculate statistics from data", stats);
+
+    pdal::Arg& argThreads = programArgs.add("threads", "Max number of concurrent threads for parallel runs", max_threads);
+    programArgs.add("verbose", "Print extra debugging output", verbose);
 
     try
     {
@@ -337,6 +390,17 @@ void buildVpc(std::vector<std::string> args)
     {
       std::cerr << "No input files!" << std::endl;
       return;
+    }
+
+    if (!argThreads.set())  // in such case our value is reset to zero
+    {
+        // use number of cores if not specified by the user
+        max_threads = std::thread::hardware_concurrency();
+        if (max_threads == 0)
+        {
+            // in case the value can't be detected, use something reasonable...
+            max_threads = 4;
+        }
     }
 
     // TODO: would be nice to support input directories too (recursive)
@@ -386,6 +450,71 @@ void buildVpc(std::vector<std::string> args)
 
         vpc.files.push_back(f);
     }
+
+    //
+
+    if (boundaries || stats)
+    {
+        std::map<std::string, Stage*> hexbinFilters, statsFilters;
+        std::vector<std::unique_ptr<PipelineManager>> pipelines;
+
+        for (VirtualPointCloud::File &f : vpc.files)
+        {
+            std::unique_ptr<PipelineManager> manager( new PipelineManager );
+
+            Stage* last = &manager->makeReader(f.filename, "");
+            if (boundaries)
+            {
+                pdal::Options hexbin_opts;
+                // TODO: any options?
+                last = &manager->makeFilter( "filters.hexbin", *last, hexbin_opts );
+                hexbinFilters[f.filename] = last;
+            }
+
+            if (stats)
+            {
+                pdal::Options stats_opts;
+                // TODO: any options?
+                last = &manager->makeFilter( "filters.stats", *last, stats_opts );
+                statsFilters[f.filename] = last;
+            }
+
+            pipelines.push_back(std::move(manager));
+        }
+
+        runPipelineParallel(vpc.totalPoints(), true, pipelines, max_threads, verbose);
+
+        for (VirtualPointCloud::File &f : vpc.files)
+        {
+            if (boundaries)
+            {
+                pdal::Stage *hexbinFilter = hexbinFilters[f.filename];
+                std::string b = hexbinFilter->getMetadata().findChild("boundary").value();
+                f.boundaryWkt = b;
+            }
+            if (stats)
+            {
+                pdal::Stage *statsFilter = statsFilters[f.filename];
+                MetadataNode m = statsFilter->getMetadata();
+                std::vector<MetadataNode> children = m.children("statistic");
+                for (const MetadataNode &n : children)
+                {
+                    VirtualPointCloud::StatsItem s(
+                        n.findChild("name").value(),
+                        n.findChild("position").value<uint32_t>(),
+                        n.findChild("average").value<double>(),
+                        n.findChild("count").value<point_count_t>(),
+                        n.findChild("maximum").value<double>(),
+                        n.findChild("minimum").value<double>(),
+                        n.findChild("stddev").value<double>(),
+                        n.findChild("variance").value<double>());
+                    f.stats.push_back(s);
+                }
+            }
+        }
+    }
+
+    //
 
     vpc.dump();
 
