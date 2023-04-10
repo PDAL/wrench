@@ -63,6 +63,10 @@ struct VirtualPointCloud
         std::string datetime;  // RFC 3339 encoded date/time - e.g. 2023-01-01T12:00:00Z
         std::vector<SchemaItem> schema;  // we're not using it, just for STAC export
         std::vector<StatsItem> stats;
+
+        // support for overview point clouds - currently we assume a file refers to at most a single overview file
+        // (when building VPC with overviews, we create one overview file for all source data)
+        std::string overviewFilename;
     };
 
     std::vector<File> files;

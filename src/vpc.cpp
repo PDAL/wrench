@@ -150,6 +150,19 @@ bool VirtualPointCloud::read(std::string filename)
                                     statsItem["variance"]));
         }
 
+        // read overview file (if any, expecting at most one)
+        // this logic is very basic, we should be probably checking roles of assets
+        if (f["assets"].contains("overview"))
+        {
+            vpcf.overviewFilename = f["assets"]["overview"]["href"];
+
+            if (vpcf.overviewFilename.substr(0, 2) == "./")
+            {
+                // resolve relative path
+                vpcf.overviewFilename = fs::weakly_canonical(filenameParent / vpcf.overviewFilename).string();
+            }
+        }
+
         files.push_back(vpcf);
     }
 
@@ -284,9 +297,33 @@ bool VirtualPointCloud::write(std::string filename)
 
         nlohmann::json links = json::array();
 
-        nlohmann::json asset = {
+        nlohmann::json dataAsset = {
             { "href", assetFilename },
+            { "roles", json::array({"data"}) },
         };
+        nlohmann::json assets = { { "data", dataAsset } };
+
+        if (!f.overviewFilename.empty())
+        {
+            std::string overviewFilename;
+            if (pdal::Utils::isRemote(f.overviewFilename))
+            {
+                // keep remote URLs as they are
+                overviewFilename = f.overviewFilename;
+            }
+            else
+            {
+                // turn local paths to relative
+                fs::path fRelative = fs::relative(f.overviewFilename, outputPath);
+                overviewFilename = "./" + fRelative.string();
+            }
+
+            nlohmann::json overviewAsset = {
+                { "href", overviewFilename },
+                { "roles", json::array({"overview"}) },
+            };
+            assets["overview"] = overviewAsset;
+        }
 
         jFiles.push_back(
         {
@@ -303,7 +340,7 @@ bool VirtualPointCloud::write(std::string filename)
             { "bbox", jsonBboxWgs84 },
             { "properties", props },
             { "links", links },
-            { "assets", { { "data", asset } } },
+            { "assets", assets },
 
         });
 
@@ -361,6 +398,7 @@ void buildVpc(std::vector<std::string> args)
     std::vector<std::string> inputFiles;
     bool boundaries = false;
     bool stats = false;
+    bool overview = false;
     int max_threads = -1;
     bool verbose = false;
 
@@ -369,6 +407,7 @@ void buildVpc(std::vector<std::string> args)
     programArgs.add("files,f", "input files", inputFiles).setPositional();
     programArgs.add("boundary", "Calculate boundary polygons from data", boundaries);
     programArgs.add("stats", "Calculate statistics from data", stats);
+    programArgs.add("overview", "Create overview point cloud from source data", overview);
 
     pdal::Arg& argThreads = programArgs.add("threads", "Max number of concurrent threads for parallel runs", max_threads);
     programArgs.add("verbose", "Print extra debugging output", verbose);
@@ -453,7 +492,19 @@ void buildVpc(std::vector<std::string> args)
 
     //
 
-    if (boundaries || stats)
+    std::string overviewFilenameBase, overviewFilenameCopc;
+    std::vector<std::string> overviewTempFiles;
+    int overviewCounter = 0;
+    if (overview)
+    {
+        // for /tmp/hello.vpc we will use /tmp/hello-overview.laz as overview file
+        fs::path outputParentDir = fs::path(outputFile).parent_path();
+        fs::path outputStem = outputParentDir / fs::path(outputFile).stem();
+        overviewFilenameBase = std::string(outputStem);
+        overviewFilenameCopc = std::string(outputStem) + "-overview.copc.laz";
+    }
+
+    if (boundaries || stats || overview)
     {
         std::map<std::string, Stage*> hexbinFilters, statsFilters;
         std::vector<std::unique_ptr<PipelineManager>> pipelines;
@@ -479,10 +530,65 @@ void buildVpc(std::vector<std::string> args)
                 statsFilters[f.filename] = last;
             }
 
+            if (overview)
+            {
+                // TODO: configurable method and step size?
+                pdal::Options decim_opts;
+                decim_opts.add(pdal::Option("step", 1000));
+                last = &manager->makeFilter( "filters.decimation", *last, decim_opts );
+
+                std::string overviewOutput = overviewFilenameBase + "-overview-tmp-" + std::to_string(++overviewCounter) + ".las";
+                overviewTempFiles.push_back(overviewOutput);
+
+                pdal::Options writer_opts;
+                writer_opts.add(pdal::Option("forward", "all"));  // TODO: maybe we could use lower scale than the original
+                manager->makeWriter(overviewOutput, "", *last, writer_opts);
+              }
+
             pipelines.push_back(std::move(manager));
         }
 
         runPipelineParallel(vpc.totalPoints(), true, pipelines, max_threads, verbose);
+
+        if (overview)
+        {
+            // When doing overviews, this is the second stage where we index overview point cloud.
+            // We do it separately because writers.copc is not streamable. We could also use
+            // untwine instead of writers.copc...
+
+            std::unique_ptr<PipelineManager> manager( new PipelineManager );
+            std::vector<std::unique_ptr<PipelineManager>> pipelinesCopcOverview;
+
+            // TODO: I am not really sure why we need a merge filter, but without it
+            // I am only getting points in output COPC from the last reader. Example
+            // from the documentation suggests the merge filter should not be needed:
+            // https://pdal.io/en/latest/stages/writers.copc.html
+
+            Stage &merge = manager->makeFilter("filters.merge");
+
+            pdal::Options writer_opts;
+            //writer_opts.add(pdal::Option("forward", "all"));
+            Stage& writer = manager->makeWriter(overviewFilenameCopc, "writers.copc", merge, writer_opts);
+
+            for (const std::string &overviewTempFile : overviewTempFiles)
+            {
+                Stage& reader = manager->makeReader(overviewTempFile, "");
+                merge.setInput(reader);
+            }
+
+            if (verbose)
+            {
+                std::cout << "Indexing overview point cloud..." << std::endl;
+            }
+            pipelinesCopcOverview.push_back(std::move(manager));
+            runPipelineParallel(vpc.totalPoints()/1000, false, pipelinesCopcOverview, max_threads, verbose);
+
+            // delete tmp overviews
+            for (const std::string &overviewTempFile : overviewTempFiles)
+            {
+                std::filesystem::remove(overviewTempFile);
+            }
+        }
 
         for (VirtualPointCloud::File &f : vpc.files)
         {
@@ -510,6 +616,10 @@ void buildVpc(std::vector<std::string> args)
                         n.findChild("variance").value<double>());
                     f.stats.push_back(s);
                 }
+            }
+            if (overview)
+            {
+                f.overviewFilename = overviewFilenameCopc;
             }
         }
     }
