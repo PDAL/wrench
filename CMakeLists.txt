@@ -51,6 +51,8 @@ target_link_libraries(pdal_wrench
         ${GDAL_LIBRARY}
 )
 
+install(TARGETS pdal_wrench DESTINATION bin)
+
 #############################################################
 # enable warnings
 
