@@ -58,6 +58,11 @@ install(TARGETS pdal_wrench DESTINATION bin)
 
 if (PEDANTIC)
   message (STATUS "Pedantic compiler settings enabled")
+
+  if(WIN32)
+    add_definitions(-DWIN32_LEAN_AND_MEAN)
+  endif()
+
   if(MSVC)
     set(_warnings "")
     if (NOT USING_NMAKE AND NOT USING_NINJA)
