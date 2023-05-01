@@ -8,6 +8,9 @@ A collection of easy to use command line tools for processing of point cloud dat
 
 And more algorithms will be added in the future!
 
+The whole suite of tools has been integrated into the QGIS Processing framework in QGIS starting from QGIS 3.32 (release in June 2023).
+There is no plugin to install - everything is available in QGIS core - just open the Processing toolbox and search for point cloud algorithms.
+
 Most of the tools are multi-threaded, making good use of all available CPUs for fast processing.
 
 All tools are based on PDAL pipelines, also using the other usual geospatial libraries: GDAL/OGR, GEOS and PROJ.
