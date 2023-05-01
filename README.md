@@ -41,7 +41,7 @@ PDAL wrench has parallel processing built in and tries to run pipelines in paral
 
 - input dataset is in COPC or EPT format - these formats allow efficient spatial queries (to access only data in a particular bounding box),
   so PDAL wrench can split the input into multiple tiles that can be processed independently in parallel
-- input dataset is a virtual point cloud (VPC) - such datasets are composed of a number of files, so the whole work can be split into jobs
+- input dataset is a [virtual point cloud (VPC)](vpc-spec.md) - such datasets are composed of a number of files, so the whole work can be split into jobs
   where each parallel job processes one or more input files
   
 If the input is a single LAS/LAZ file, no parallelization is attempted. This may change in the future with introduction of more complex algorithms (where the cost of reading the input is much lower than the cost of the actual algorithm).
@@ -161,7 +161,7 @@ pdal_wrench to_vector --output=data.gpkg data.las
 
 This is similar to GDAL's VRT - a single file referring to other files that contain actual data. Software then may handle all data as a single dataset.
 
-Virtual point clouds based on STAC protocol's ItemCollection, which is in fact a GeoJSON feature collection with extra metadata written in a standard way.
+Virtual point clouds based on STAC protocol's ItemCollection, which is in fact a GeoJSON feature collection with extra metadata written in a standard way. See [VPC spec](vpc-spec.md) for more details on the file format.
 
 To create a virtual point cloud:
 ```
