@@ -34,6 +34,18 @@ If PDAL is not installed in the usual system paths (e.g. in `/usr`), then add `P
 cmake -DPDAL_DIR=/home/martin/pdal-inst/lib/cmake/PDAL ..
 ```
 
+# Parallel processing
+
+PDAL runs point cloud pipelines in a single thread and any parallelization is up to users of the library.
+PDAL wrench has parallel processing built in and tries to run pipelines in parallel. This generally happens in two scenarios:
+
+- input dataset is in COPC or EPT format - these formats allow efficient spatial queries (to access only data in a particular bounding box),
+  so PDAL wrench can split the input into multiple tiles that can be processed independently in parallel
+- input dataset is a virtual point cloud (VPC) - such datasets are composed of a number of files, so the whole work can be split into jobs
+  where each parallel job processes one or more input files
+  
+If the input is a single LAS/LAZ file, no parallelization is attempted. This may change in the future with introduction of more complex algorithms (where the cost of reading the input is much lower than the cost of the actual algorithm).
+
 # Commands
 
 ## info
@@ -58,7 +70,7 @@ Reproject point cloud to a different coordinate reference system:
 pdal_wrench translate --input=data.las --output=reprojected.las --transform-crs=EPSG:3857
 ```
 
-Fix coordinate reference system (if not present or wrong):
+Assign coordinate reference system (if not present or wrong):
 
 ```
 pdal_wrench translate --input=data-with-invalid-crs.las --output=data.las --assign-crs=EPSG:3857
@@ -148,6 +160,8 @@ pdal_wrench to_vector --output=data.gpkg data.las
 # Virtual Point Clouds (VPC)
 
 This is similar to GDAL's VRT - a single file referring to other files that contain actual data. Software then may handle all data as a single dataset.
+
+Virtual point clouds based on STAC protocol's ItemCollection, which is in fact a GeoJSON feature collection with extra metadata written in a standard way.
 
 To create a virtual point cloud:
 ```
