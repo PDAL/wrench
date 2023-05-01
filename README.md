@@ -5,6 +5,7 @@ A collection of easy to use command line tools for processing of point cloud dat
 
 - basic management of data (info, translate, merge, tile, thin, clip, boundary, density, to_vector)
 - export of raster grids (to_raster, to_raster_tin)
+- handle [virtual point clouds](vpc-spec.md) (build_vpc)
 
 And more algorithms will be added in the future!
 
