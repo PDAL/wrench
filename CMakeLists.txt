@@ -10,6 +10,7 @@ set (PEDANTIC TRUE CACHE BOOL "Determines if we should compile in pedantic mode.
 
 find_package(PDAL REQUIRED)
 find_package(GDAL REQUIRED)
+find_package(Threads REQUIRED)
 
 add_executable(pdal_wrench
     src/main.cpp
@@ -49,6 +50,7 @@ target_link_libraries(pdal_wrench
         #${CMAKE_THREAD_LIBS_INIT}
         ${PDAL_LIBRARIES}
         ${GDAL_LIBRARY}
+        ${CMAKE_THREAD_LIBS_INIT}
 )
 
 install(TARGETS pdal_wrench DESTINATION bin)
