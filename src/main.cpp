@@ -27,6 +27,27 @@ TODO:
 extern int runTile(std::vector<std::string> arglist);  // tile/tile.cpp
 
 
+void printUsage()
+{
+    std::cout << "usage: pdal_wrench <command> [<args>]" << std::endl;
+    std::cout << "       pdal_wrench [--help]" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Available commands:" << std::endl;
+    std::cout << "   boundary        Exports a polygon file containing boundary" << std::endl;
+    std::cout << "   build_vpc       Creates a virtual point cloud" << std::endl;
+    std::cout << "   clip            Outputs only points that are inside of the clipping polygons" << std::endl;
+    std::cout << "   density         Exports a raster where each cell contains number of points" << std::endl;
+    std::cout << "   info            Prints basic metadata from the point cloud file" << std::endl;
+    std::cout << "   merge           Merges multiple point cloud files to a single one" << std::endl;
+    std::cout << "   thin            Creates a thinned version of the point cloud (with fewer points)" << std::endl;
+    std::cout << "   tile            Creates square tiles from input data" << std::endl;
+    std::cout << "   to_raster       Exports point cloud data to a 2D raster grid" << std::endl;
+    std::cout << "   to_raster_tin   Exports point cloud data to a 2D raster grid using triangulation" << std::endl;
+    std::cout << "   to_vector       Exports point cloud data to a vector layer with 3D points" << std::endl;
+    std::cout << "   translate       Converts to a different file format, reproject, and more" << std::endl;
+}
+
+
 #if defined(_WIN32) && defined(_MSC_VER)
 int wmain( int argc, wchar_t *argv[ ], wchar_t *envp[ ] )
 #else
@@ -35,19 +56,7 @@ int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-        std::cerr << "need to specify command:" << std::endl;
-        std::cerr << " - boundary" << std::endl;
-        std::cerr << " - clip" << std::endl;
-        std::cerr << " - density" << std::endl;
-        std::cerr << " - build_vpc" << std::endl;
-        std::cerr << " - info" << std::endl;
-        std::cerr << " - merge" << std::endl;
-        std::cerr << " - thin" << std::endl;
-        std::cerr << " - tile" << std::endl;
-        std::cerr << " - to_raster" << std::endl;
-        std::cerr << " - to_raster_tin" << std::endl;
-        std::cerr << " - to_vector" << std::endl;
-        std::cerr << " - translate" << std::endl;
+        printUsage();
         return 1;
     }
     std::string cmd = pdal::FileUtils::fromNative(argv[1]);
@@ -56,7 +65,11 @@ int main(int argc, char* argv[])
     for ( int i = 2; i < argc; ++i )
         args.push_back(pdal::FileUtils::fromNative(argv[i]));
 
-    if (cmd == "density")
+    if (cmd == "--help" || cmd == "help")
+    {
+        printUsage();
+    }
+    else if (cmd == "density")
     {
         Density density;
         runAlg(args, density);
