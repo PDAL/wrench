@@ -194,8 +194,13 @@ void Boundary::finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines
         {
             std::cerr << "Failed to parse geometry: " << wkt << std::endl;
         }
+        if ( wkbFlatten(OGR_G_GetGeometryType(geom)) == wkbPolygon)
+        {
+            // this function takes ownership of "geom" and then creates new instance
+            geom = OGR_G_ForceToMultiPolygon(geom);
+        }
         OGRFeatureH hFeature = OGR_F_Create(OGR_L_GetLayerDefn(hLayer));
-        if (OGR_F_SetGeometry(hFeature, geom) != OGRERR_NONE)
+        if (OGR_F_SetGeometryDirectly(hFeature, geom) != OGRERR_NONE)
         {
             std::cerr << "Could not set geometry " << wkt << std::endl;
         }
