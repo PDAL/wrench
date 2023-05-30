@@ -19,18 +19,19 @@ TODO:
 #include <iostream>
 #include <vector>
 
+#include <pdal/util/FileUtils.hpp>
+
 #include "alg.hpp"
 #include "vpc.hpp"
 
 extern int runTile(std::vector<std::string> arglist);  // tile/tile.cpp
 
 
-// TODO: make it windows/unicode friendly
-//#ifdef _WIN32
-//int wmain( int argc, wchar_t *argv[ ], wchar_t *envp[ ] )
-//#else
+#if defined(_WIN32) && defined(_MSC_VER)
+int wmain( int argc, wchar_t *argv[ ], wchar_t *envp[ ] )
+#else
 int main(int argc, char* argv[])
-//#endif
+#endif
 {
     if (argc < 2)
     {
@@ -49,12 +50,11 @@ int main(int argc, char* argv[])
         std::cerr << " - translate" << std::endl;
         return 1;
     }
-    std::string cmd = argv[1];
+    std::string cmd = pdal::FileUtils::fromNative(argv[1]);
 
-    // TODO: use untwine::fromNative(argv[i])
     std::vector<std::string> args;
     for ( int i = 2; i < argc; ++i )
-        args.push_back(argv[i]);
+        args.push_back(pdal::FileUtils::fromNative(argv[i]));
 
     if (cmd == "density")
     {
