@@ -51,6 +51,8 @@ struct Alg
 
     point_count_t totalPoints = 0;   // calculated number of points from the input data
     BOX3D bounds;                    // calculated 3D bounding box from the input data
+    SpatialReference crs;            // CRS of the input data (only valid when needsSingleCrs==true)
+
 
     pdal::ProgramArgs programArgs;
 

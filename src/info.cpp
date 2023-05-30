@@ -119,15 +119,15 @@ void Info::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>&)
             box.grow(f.bbox);
         }
 
-        std::string crs;
+        std::string crsName;
         std::string units;
-        formatCrsInfo(vpc.crsWkt, crs, units);
+        formatCrsInfo(vpc.crsWkt, crsName, units);
 
         std::cout << "VPC           " << vpc.files.size() << " files" << std::endl;
         std::cout << "count         " << total << std::endl;
         std::cout << "extent        " << box.minx << " " << box.miny << " " << box.minz << std::endl;
         std::cout << "              " << box.maxx << " " << box.maxy << " " << box.maxz << std::endl;
-        std::cout << "crs           " << crs << std::endl;
+        std::cout << "crs           " << crsName << std::endl;
         std::cout << "units         " << units << std::endl;
 
         // list individual files

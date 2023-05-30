@@ -46,6 +46,8 @@ bool runAlg(std::vector<std::string> args, Alg &alg)
                 return false;
             alg.totalPoints = vpc.totalPoints();
             alg.bounds = vpc.box3d();
+            if (!alg.needsSingleCrs)
+                alg.crs = SpatialReference(vpc.crsWkt);
 
             if (alg.needsSingleCrs && vpc.crsWkt == "_mix_")
             {
@@ -58,6 +60,7 @@ bool runAlg(std::vector<std::string> args, Alg &alg)
             QuickInfo qi = getQuickInfo(alg.inputFile);
             alg.totalPoints = qi.m_pointCount;
             alg.bounds = qi.m_bounds;
+            alg.crs = qi.m_srs;
         }
     }
 
