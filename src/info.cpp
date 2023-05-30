@@ -101,7 +101,7 @@ static void formatCrsInfo(const std::string &crsWkt, std::string &crs, std::stri
 }
 
 
-void Info::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>&, const BOX3D &, point_count_t &)
+void Info::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>&)
 {
     if (ends_with(inputFile, ".vpc"))
     {

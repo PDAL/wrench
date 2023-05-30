@@ -109,7 +109,7 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, double r
     return manager;
 }
 
-void Boundary::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines, const BOX3D &, point_count_t &)
+void Boundary::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
 {
     if (ends_with(inputFile, ".vpc"))
     {
