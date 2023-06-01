@@ -11,6 +11,7 @@
  ****************************************************************************/
 
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 #include <thread>
 namespace fs = std::filesystem;
@@ -395,6 +396,7 @@ std::string dateTimeStringFromYearAndDay(int year, int dayOfYear)
 void buildVpc(std::vector<std::string> args)
 {
     std::string outputFile;
+    std::string inputFileList;
     std::vector<std::string> inputFiles;
     bool boundaries = false;
     bool stats = false;
@@ -408,6 +410,7 @@ void buildVpc(std::vector<std::string> args)
     programArgs.add("boundary", "Calculate boundary polygons from data", boundaries);
     programArgs.add("stats", "Calculate statistics from data", stats);
     programArgs.add("overview", "Create overview point cloud from source data", overview);
+    programArgs.add("input_file_list", "Read input files from a txt file, one file per line.", inputFileList);
 
     pdal::Arg& argThreads = programArgs.add("threads", "Max number of concurrent threads for parallel runs", max_threads);
     programArgs.add("verbose", "Print extra debugging output", verbose);
@@ -420,6 +423,24 @@ void buildVpc(std::vector<std::string> args)
     {
         std::cerr << "failed to parse arguments: " << err.what() << std::endl;
         return;
+    }
+
+    if (!inputFileList.empty())
+    {
+        std::ifstream inputFile(inputFileList);
+        std::string line;
+
+        if(!inputFile)
+        {
+            std::cerr << "failed to open input file list: " << inputFileList << std::endl;
+            return;
+        }
+
+        while (std::getline(inputFile, line))
+        {
+            inputFiles.push_back(line);
+        }
+
     }
 
 //    std::cout << "input " << inputFiles.size() << std::endl;
