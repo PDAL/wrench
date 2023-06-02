@@ -26,7 +26,6 @@ namespace fs = std::filesystem;
 #include "nlohmann/json.hpp"
 
 
-
 using json = nlohmann::json;
 
 using namespace pdal;
@@ -403,14 +402,16 @@ void buildVpc(std::vector<std::string> args)
     bool overview = false;
     int max_threads = -1;
     bool verbose = false;
+    bool help = false;
 
     ProgramArgs programArgs;
+    programArgs.add("help,h", "Output command help.", help);
     programArgs.add("output,o", "Output virtual point cloud file", outputFile);
     programArgs.add("files,f", "input files", inputFiles).setPositional();
+    programArgs.add("input-file-list", "Read input files from a txt file, one file per line.", inputFileList);
     programArgs.add("boundary", "Calculate boundary polygons from data", boundaries);
     programArgs.add("stats", "Calculate statistics from data", stats);
     programArgs.add("overview", "Create overview point cloud from source data", overview);
-    programArgs.add("input_file_list", "Read input files from a txt file, one file per line.", inputFileList);
 
     pdal::Arg& argThreads = programArgs.add("threads", "Max number of concurrent threads for parallel runs", max_threads);
     programArgs.add("verbose", "Print extra debugging output", verbose);
@@ -422,6 +423,14 @@ void buildVpc(std::vector<std::string> args)
     catch(pdal::arg_error err)
     {
         std::cerr << "failed to parse arguments: " << err.what() << std::endl;
+        return;
+    }
+
+    if (help)
+    {
+        
+        std::cout << "usage: pdal_wrench build_vpc [<args>]" << std::endl;
+        programArgs.dump(std::cerr, 2, Utils::screenWidth());
         return;
     }
 

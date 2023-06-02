@@ -172,6 +172,18 @@ To create a virtual point cloud:
 pdal_wrench build_vpc --output=hello.vpc data1.las data2.las data3.las
 ```
 
+Or, if the inputs are listed in a text file:
+```
+data1.las
+data2.las
+data3.las
+```
+
+You can provide that file as input:
+```
+pdal_wrench build_vpc --output=hello.vpc --input-file-list=inputs.txt
+```
+
 Afterwards, other algorithms can be applied to a VPC:
 ```
 pdal_wrench clip --input=hello.vpc --polygon=clip.gpkg --output=hello_clipped.vpc
