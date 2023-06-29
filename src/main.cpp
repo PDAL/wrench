@@ -123,6 +123,11 @@ int main(int argc, char* argv[])
         Translate translate;
         runAlg(args, translate);
     }
+    else if (cmd == "transformation")
+    {
+        Transform transform;
+        runAlg(args, transform);
+    }
     else if (cmd == "tile")
     {
       runTile(args);
