@@ -370,13 +370,13 @@ std::string dateTimeStringFromYearAndDay(int year, int dayOfYear)
 
     if (year < 0)  // Year is negative
     {
-        std::cout << "Warning: year(" << year <<
+        std::cerr << "Warning: year(" << year <<
             ") is not valid. Defualting to 1970." << std::endl;
         year = 1970;
     }
     if ((dayOfYear < 1) || (dayOfYear > (leapYear ? 366 : 365)))
     {
-        std::cout << "Warning: DayOfYear(" << year <<
+        std::cerr << "Warning: DayOfYear(" << year <<
             ") is out of range. Defualting to 1." << std::endl;
         dayOfYear = 1;
     }
