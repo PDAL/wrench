@@ -368,8 +368,18 @@ std::string dateTimeStringFromYearAndDay(int year, int dayOfYear)
 {
     bool leapYear = isLeapYear(year);
 
-    if (year < 0) return "";  // Year is negative
-    if ((dayOfYear < 1) || (dayOfYear > (leapYear ? 366 : 365))) return ""; // Day of year is out of range
+    if (year < 0)  // Year is negative
+    {
+        std::cout << "Warning: year(" << year <<
+            ") is not valid. Defualting to 1970." << std::endl;
+        year = 1970;
+    }
+    if ((dayOfYear < 1) || (dayOfYear > (leapYear ? 366 : 365)))
+    {
+        std::cout << "Warning: DayOfYear(" << year <<
+            ") is out of range. Defualting to 1." << std::endl;
+        dayOfYear = 1;
+    }
 
     // Figure out month and day of month, from day of year.
     int daysInMonth[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -428,7 +438,7 @@ void buildVpc(std::vector<std::string> args)
 
     if (help)
     {
-        
+
         std::cout << "usage: pdal_wrench build_vpc [<args>]" << std::endl;
         programArgs.dump(std::cerr, 2, Utils::screenWidth());
         return;
