@@ -142,7 +142,7 @@ pdal_wrench thin --output=thinned.las --mode=sample --step-sample=20 data.las
 Exports point cloud data to a 2D raster grid, having cell size of given resolution, writing values from the specified attribute. Uses inverse distance weighting.
 
 ```
-pdal_wrench to_raster --output=raster.tif --resolution=1 --attribute=Z data.las
+pdal_wrench to_raster --output=raster.tif --resolution=1 --attribute=Z --input=data.las
 ```
 
 ## to_raster_tin
@@ -150,7 +150,7 @@ pdal_wrench to_raster --output=raster.tif --resolution=1 --attribute=Z data.las
 Exports point cloud data to a 2D raster grid like `to_raster` does, but using a triangulation of points and then interpolating cell values from triangles. It does not produce any "holes" when some data are missing. Only supports output of Z attribute.
 
 ```
-pdal_wrench to_raster_tin --output=raster.tif --resolution=1 data.las
+pdal_wrench to_raster_tin --output=raster.tif --resolution=1 --input=data.las
 ```
 
 ## to_vector
@@ -158,7 +158,7 @@ pdal_wrench to_raster_tin --output=raster.tif --resolution=1 data.las
 Exports point cloud data to a vector layer with 3D points (a GeoPackage), optionally with extra attributes:
 
 ```
-pdal_wrench to_vector --output=data.gpkg data.las
+pdal_wrench to_vector --output=data.gpkg --input=data.las
 ```
 
 # Virtual Point Clouds (VPC)
