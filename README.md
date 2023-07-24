@@ -128,7 +128,7 @@ Creates a thinned version of the point cloud by only keeping every N-th point (`
 For example, to only keep every 20th point, so only 5% of points will be in the output:
 
 ```
-pdal_wrench thin --output=thinned.las --mode=every-nth --step-every-nth=20 data.las
+pdal_wrench thin --output=thinned.las --mode=every-nth --step-every-nth=20 --input=data.las
 ```
 
 Alternatively, to sample points using Poisson sampling of the input:
