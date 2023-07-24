@@ -134,7 +134,7 @@ pdal_wrench thin --output=thinned.las --mode=every-nth --step-every-nth=20 --inp
 Alternatively, to sample points using Poisson sampling of the input:
 
 ```
-pdal_wrench thin --output=thinned.las --mode=sample --step-sample=20 data.las
+pdal_wrench thin --output=thinned.las --mode=sample --step-sample=20 --input=data.las
 ```
 
 ## to_raster
