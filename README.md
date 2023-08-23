@@ -47,7 +47,7 @@ PDAL wrench has parallel processing built in and tries to run pipelines in paral
   so PDAL wrench can split the input into multiple tiles that can be processed independently in parallel
 - input dataset is a [virtual point cloud (VPC)](vpc-spec.md) - such datasets are composed of a number of files, so the whole work can be split into jobs
   where each parallel job processes one or more input files
-  
+
 If the input is a single LAS/LAZ file, no parallelization is attempted. This may change in the future with introduction of more complex algorithms (where the cost of reading the input is much lower than the cost of the actual algorithm).
 
 # Commands
@@ -111,6 +111,12 @@ Merges multiple point cloud files to a single one.
 
 ```
 pdal_wrench merge --output=merged.las data1.las data2.las data3.las
+```
+
+Alternatively, it is possible to merge files whose paths are specified in a text file (one file per line)
+
+```
+pdal_wrench merge --output=merged.las --input-file-list=my_list.txt
 ```
 
 ## tile
