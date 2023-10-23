@@ -124,7 +124,7 @@ pdal_wrench merge --output=merged.las --input-file-list=my_list.txt
 Creates tiles from input data. For example to get tiles sized 100x100:
 
 ```
-pdal_wrench tile --length=100 --output=/data/tiles --files=data1.las --files=data2.las --files=data3.las
+pdal_wrench tile --length=100 --output=/data/tiles data1.las data2.las data3.las
 ```
 
 This tool can also read input data from a text file (one file per line)
