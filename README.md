@@ -127,6 +127,12 @@ Creates tiles from input data. For example to get tiles sized 100x100:
 pdal_wrench tile --length=100 --output=/data/tiles data1.las data2.las data3.las
 ```
 
+This tool can also read input data from a text file (one file per line)
+
+```
+pdal_wrench tile --length=100 --output=/data/tiles --input-file-list=my_list.txt
+```
+
 ## thin
 
 Creates a thinned version of the point cloud by only keeping every N-th point (`every-nth` mode) or keep points based on their distance (`sample` mode).
