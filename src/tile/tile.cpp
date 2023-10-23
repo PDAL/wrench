@@ -434,7 +434,7 @@ static void writeOutputFile(const std::string& filename, pdal::PointViewPtr view
 void addArgs(pdal::ProgramArgs& programArgs, BaseInfo::Options& options, pdal::Arg * &tempArg, pdal::Arg * &threadsArg)
 {
     programArgs.add("output,o", "Output directory/filename", options.outputDir);
-    programArgs.add("files,i", "Input files/directory", options.inputFiles);
+    programArgs.add("files,i", "Input files/directory", options.inputFiles).setPositional();
     programArgs.add("input-file-list", "Read input files from a text file", options.inputFileList);
     programArgs.add("length,l", "Tile length", options.tileLength, 1000.);
     tempArg = &(programArgs.add("temp_dir", "Temp directory", options.tempDir));
@@ -463,7 +463,7 @@ bool handleOptions(pdal::StringList& arglist, BaseInfo::Options& options)
     addArgs(programArgs, options, tempArg, threadsArg);
     try
     {
-        programArgs.parse(arglist);
+        programArgs.parseSimple(arglist);
     }
     catch (const pdal::arg_error& err)
     {
