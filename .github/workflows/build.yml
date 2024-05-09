@@ -19,11 +19,14 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         if: matrix.os == 'windows-latest'
 
-      - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@v2
+      - uses: mamba-org/setup-micromamba@v1
+        name: Setup Conda
         with:
-          channels: conda-forge
-          auto-update-conda: true
+            init-shell: bash
+            environment-file: environment.yml
+            environment-name: "wrench"
+            cache-environment: true
+            cache-downloads: true
 
       - name: Install dependencies
         shell: bash -l {0}
