@@ -1,20 +1,23 @@
-name: Windows build
+name: Build
 
 on: [push, pull_request]
 
 jobs:
-  windows-build:
-    name: MSVC build
-    runs-on: windows-latest
+  build:
+    name: Compile on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
+        if: matrix.os == 'windows-latest'
 
       - name: Setup Conda
         uses: conda-incubator/setup-miniconda@v2
@@ -27,23 +30,24 @@ jobs:
         run: |
           mkdir build
           conda update -n base -c defaults conda
-          conda install -c conda-forge cmake ninja -y
+          conda install -c conda-forge cmake ninja compilers -y
           conda install -c conda-forge --yes --quiet pdal -y
 
       - name: Run cmake
         shell: bash -l {0}
         working-directory: ./build
         run: |
-          export CC=cl.exe
-          export CXX=cl.exe
-          cmake -G "Ninja" \
-            -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
-            -DCMAKE_PREFIX_PATH="$CONDA_PREFIX/Library" \
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            export CC=cl.exe
+            export CXX=cl.exe
+          fi
+          cmake -G Ninja \
+            -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} \
             ..
 
       - name: Build pdal_wrench
         shell: bash -l {0}
         working-directory: ./build
         run: |
-          ninja -v
+          ninja
           ninja install
