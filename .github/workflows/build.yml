@@ -33,6 +33,11 @@ jobs:
             cache-environment: true
             cache-downloads: true
 
+      - name: Create working directory
+        shell: bash -l {0}
+        run: |
+          mkdir build
+
       - name: Run cmake
         shell: bash -l {0}
         working-directory: ./build
