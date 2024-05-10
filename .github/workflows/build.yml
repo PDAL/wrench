@@ -33,14 +33,6 @@ jobs:
             cache-environment: true
             cache-downloads: true
 
-      - name: Install dependencies
-        shell: bash -l {0}
-        run: |
-          mkdir build
-          conda update -n base -c defaults conda
-          conda install -c conda-forge cmake ninja compilers -y
-          conda install -c conda-forge --yes --quiet pdal -y
-
       - name: Run cmake
         shell: bash -l {0}
         working-directory: ./build
