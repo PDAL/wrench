@@ -125,6 +125,27 @@ struct Translate : public Alg
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 };
 
+struct Transform : public Alg
+{
+    // parameters from the user
+    std::string outputFile;
+    bool invert;
+    std::string matrix; // whitespace delimited 4x4 transformation matrix
+    std::string outputFormat;  // las / laz / copc
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argOutputFormat = nullptr;
+
+    std::vector<std::string> tileOutputFiles;
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};
+
 struct Density : public Alg
 {
     // parameters from the user
