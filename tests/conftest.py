@@ -30,11 +30,11 @@ def _prepare_data():
     for i in range(1, 5):
 
         clip_gpkg_file = utils.test_data_filepath(f"rectangle{i}.gpkg")
-        clipped_las_file = utils.test_data_filepath(f"data_clipped{i}.las")
+        clipped_laz_file = utils.test_data_filepath(f"data_clipped{i}.laz")
 
-        files_for_vpc.append(clipped_las_file)
+        files_for_vpc.append(clipped_laz_file)
 
-        if not clipped_las_file.exists():
+        if not clipped_laz_file.exists():
 
             input_file = base_data
 
@@ -45,7 +45,7 @@ def _prepare_data():
                     "--polygon",
                     str(clip_gpkg_file),
                     "--output",
-                    str(clipped_las_file),
+                    str(clipped_laz_file),
                     "--input",
                     str(input_file),
                 ],
@@ -72,9 +72,15 @@ def _prepare_data():
 
 
 @pytest.fixture
-def las_files() -> typing.List[str]:
-    """Return a list of las files"""
+def laz_files() -> typing.List[str]:
+    """Return a list of laz files"""
     files = []
     for i in range(1, 5):
-        files.append(utils.test_data_filepath(f"data_clipped{i}.las").as_posix())
+        files.append(utils.test_data_filepath(f"data_clipped{i}.laz").as_posix())
     return files
+
+
+@pytest.fixture
+def main_laz_file() -> str:
+    "Return path to the main laz file"
+    return utils.test_data_filepath("stadium-utm.laz").as_posix()
