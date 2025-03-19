@@ -6,8 +6,8 @@ import pdal
 import utils
 
 
-def test_merge_las(las_files: typing.List[str]):
-    """Test merge_las function"""
+def test_merge_las(laz_files: typing.List[str]):
+    """Test merge las function"""
 
     merged_las_file = utils.test_data_filepath("data_merged.las")
 
@@ -15,9 +15,8 @@ def test_merge_las(las_files: typing.List[str]):
         [
             utils.pdal_wrench_path(),
             "merge",
-            "--output",
-            merged_las_file.as_posix(),
-            *las_files,
+            f"--output={merged_las_file.as_posix()}",
+            *laz_files,
         ],
         check=True,
     )
