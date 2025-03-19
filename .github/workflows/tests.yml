@@ -52,5 +52,5 @@ jobs:
       - name: Run tests
         shell: bash -el {0}
         run: |
-            pytest tests
+            pytest tests -vv
           
