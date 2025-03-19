@@ -126,6 +126,31 @@ void Merge::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipe
             inputFiles.push_back(line);
         }
     }
+    
+    std::vector<std::string> vpcFilesToRemove;
+    vpcFilesToRemove.reserve(inputFiles.size());
+
+    for (const std::string& inputFile : inputFiles)
+    {
+        if (ends_with(inputFile, ".vpc"))
+        {   
+            vpcFilesToRemove.push_back(inputFile);
+
+            VirtualPointCloud vpc;
+            if (!vpc.read(inputFile))
+                return;
+            
+            for (const VirtualPointCloud::File& vpcSingleFile : vpc.files)
+            {
+                inputFiles.push_back(vpcSingleFile.filename);
+            }
+        }
+    }
+
+    for (const std::string& f : vpcFilesToRemove)
+    {
+        inputFiles.erase(std::remove(inputFiles.begin(), inputFiles.end(), f), inputFiles.end());
+    }
 
     tile.inputFilenames = inputFiles;
     tile.outputFilename = outputFile;
