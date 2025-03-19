@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: mamba-org/setup-micromamba@v1
+      - uses: mamba-org/setup-micromamba@v2
         name: Setup Conda
         with:
             init-shell: bash
@@ -26,6 +26,7 @@ jobs:
             cache-downloads: true
       
       - name: Add Python packages
+        shell: bash -el {0}
         run: conda install pytest -y
 
       - name: Create working directory
@@ -49,5 +50,7 @@ jobs:
           ninja install
 
       - name: Run tests
+        shell: bash -el {0}
         run: |
             pytest tests
+          
