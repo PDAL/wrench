@@ -1,4 +1,8 @@
 CMakeLists.txt.user
 .idea
 build-*/
-
+.vscode
+build
+/tests/data/*.laz
+/tests/data/*.las
+/tests/data/*.vpc
