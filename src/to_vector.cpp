@@ -174,7 +174,7 @@ void ToVector::finalize(std::vector<std::unique_ptr<PipelineManager>>&)
         GDALVectorTranslateOptions *options = GDALVectorTranslateOptionsNew(nullptr, NULL);
 
         // open VRT file and check it
-        GDALDatasetH vrtDs = GDALOpenEx(vrtFile.c_str(), GDAL_OF_VECTOR | GDAL_OF_READONLY, NULL, NULL, NULL);
+        GDALDatasetH vrtDs = GDALOpenEx(vrtFile.string().c_str(), GDAL_OF_VECTOR | GDAL_OF_READONLY, NULL, NULL, NULL);
         if (!vrtDs)
         {
             std::cerr << "Failed to open composite VRT file" << std::endl;
