@@ -84,3 +84,9 @@ def laz_files() -> typing.List[str]:
 def main_laz_file() -> str:
     "Return path to the main laz file"
     return utils.test_data_filepath("stadium-utm.laz").as_posix()
+
+
+@pytest.fixture
+def vpc_file() -> str:
+    "Return path to the vpc file"
+    return utils.test_data_filepath("data.vpc").as_posix()
