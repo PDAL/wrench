@@ -24,10 +24,12 @@ jobs:
             environment-name: "wrench"
             cache-environment: true
             cache-downloads: true
-      
+            create-args: >-
+              python=3.12
+
       - name: Add Python packages
         shell: bash -el {0}
-        run: conda install pytest -y
+        run: conda install pytest GDAL -y
 
       - name: Create working directory
         shell: bash -l {0}
