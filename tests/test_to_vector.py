@@ -3,6 +3,8 @@ import subprocess
 import utils
 from osgeo import ogr
 
+ogr.UseExceptions()
+
 
 def test_to_vector_las_file(main_laz_file: str):
     """Test to_vector las function"""
@@ -57,6 +59,10 @@ def test_to_vector_vpc_file(vpc_file: str):
     assert res.returncode == 0
 
     assert gpkg_file.exists()
+
+    temp_folder = gpkg_file.parent / gpkg_file.stem
+
+    assert not temp_folder.exists()
 
     ds: ogr.DataSource = ogr.Open(gpkg_file.as_posix())
 
