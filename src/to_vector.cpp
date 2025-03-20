@@ -157,8 +157,7 @@ void ToVector::finalize(std::vector<std::unique_ptr<PipelineManager>>&)
 
             for (const std::string& f : tileOutputFiles)
             {   
-                std::string layerName = fs::path(f).stem().string();
-                outputStreamFile << "<OGRVRTLayer name=\"" << layerName << "\">" << std::endl;
+                outputStreamFile << "<OGRVRTLayer name=\"" << fs::path(f).stem().string() << "\">" << std::endl;
                 outputStreamFile << "<SrcDataSource>" << f <<  "</SrcDataSource>" << std::endl;
                 outputStreamFile << "<SrcLayer>points</SrcLayer>" << std::endl;
                 outputStreamFile << "</OGRVRTLayer>" << std::endl;
