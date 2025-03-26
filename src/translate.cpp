@@ -185,6 +185,10 @@ void Translate::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& 
     }
     else
     {
+        if (outputFile.find("copc") != std::string::npos)
+        {
+            isStreaming = false;
+        }
         ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression, filterBounds);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
