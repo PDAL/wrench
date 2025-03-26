@@ -151,3 +151,16 @@ bool Alg::parseArgs(std::vector<std::string> args)
 
     return true;
 }
+
+void removeFiles(const std::vector<std::string> &tileOutputFiles, bool removeParentDirIfEmpty)
+{
+    fs::path outputDir = fs::path(tileOutputFiles[0]).parent_path();
+    for (const std::string &f : tileOutputFiles)
+    {
+        fs::remove(f);
+    }
+    if (removeParentDirIfEmpty && fs::is_empty(outputDir))
+    {
+        fs::remove(outputDir);
+    }
+}
