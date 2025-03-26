@@ -179,7 +179,7 @@ void Translate::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& 
     }
     else
     {
-        if (outputFile.ends_with(".copc"))
+        if (ends_with(outputFile, ".copc"))
         {
             isStreaming = false;
         }
@@ -210,7 +210,7 @@ void Translate::finalize(std::vector<std::unique_ptr<PipelineManager>>&)
         // merge all the output files into a single file        
         Merge merge;
         // for copc set isStreaming to false
-        if (outputFile.ends_with(".copc"))
+        if (ends_with(outputFile, ".copc"))
         {
             merge.isStreaming = false;
         }
