@@ -195,10 +195,28 @@ void Translate::finalize(std::vector<std::unique_ptr<PipelineManager>>&)
     if (tileOutputFiles.empty())
         return;
 
-    // now build a new output VPC
     std::vector<std::string> args;
     args.push_back("--output=" + outputFile);
     for (std::string f : tileOutputFiles)
         args.push_back(f);
-    buildVpc(args);
+
+    if (ends_with(outputFile, ".vpc"))
+    {
+        // now build a new output VPC
+        buildVpc(args);
+    }
+    else
+    {
+        // merge all the output files into a single file        
+        Merge merge;
+        // for copc set isStreaming to false
+        if (outputFile.find("copc") != std::string::npos)
+        {
+            merge.isStreaming = false;
+        }
+        runAlg(args, merge);
+
+        // remove files as they are not needed anymore - they are merged
+        removeFiles(tileOutputFiles, true);
+    }
 }
