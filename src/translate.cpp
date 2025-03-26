@@ -152,12 +152,6 @@ void Translate::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& 
 {
     if (ends_with(inputFile, ".vpc"))
     {
-        if (!ends_with(outputFile, ".vpc"))
-        {
-            std::cerr << "If input file is a VPC, output should be VPC too." << std::endl;
-            return;
-        }
-
         // for /tmp/hello.vpc we will use /tmp/hello dir for all results
         fs::path outputParentDir = fs::path(outputFile).parent_path();
         fs::path outputSubdir = outputParentDir / fs::path(outputFile).stem();
