@@ -60,8 +60,8 @@ def _prepare_data():
 
             assert res.returncode == 0
 
-            clipped_laz_file = pdal.Reader(clipped_laz_file.as_posix()).pipeline()
-            number_points = clipped_laz_file.execute()
+            clipped_laz = pdal.Reader(clipped_laz_file.as_posix()).pipeline()
+            number_points = clipped_laz.execute()
 
             assert number_points > 0
 
