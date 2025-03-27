@@ -170,7 +170,11 @@ void Translate::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& 
             // for input file /x/y/z.las that goes to /tmp/hello.vpc,
             // individual output file will be called /tmp/hello/z.las
             fs::path inputBasename = fs::path(f.filename).stem();
-            tile.outputFilename = (outputSubdir / inputBasename).string() + "." + outputFormat;
+
+            if (!ends_with(outputFile, ".vpc"))
+                tile.outputFilename = (outputSubdir / inputBasename).string() + ".las";
+            else
+                tile.outputFilename = (outputSubdir / inputBasename).string() + outputFormat;
 
             tileOutputFiles.push_back(tile.outputFilename);
 
@@ -179,7 +183,7 @@ void Translate::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& 
     }
     else
     {
-        if (ends_with(outputFile, ".copc"))
+        if (ends_with(outputFile, ".copc.laz"))
         {
             isStreaming = false;
         }
@@ -210,7 +214,7 @@ void Translate::finalize(std::vector<std::unique_ptr<PipelineManager>>&)
         // merge all the output files into a single file        
         Merge merge;
         // for copc set isStreaming to false
-        if (ends_with(outputFile, ".copc"))
+        if (ends_with(outputFile, ".copc.laz"))
         {
             merge.isStreaming = false;
         }

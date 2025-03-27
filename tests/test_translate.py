@@ -60,7 +60,7 @@ def test_translate_laz_to_copc(main_laz_file: str):
 def test_translate_vpc_to_copc(vpc_file: str):
     """Test translate vpc to copc function"""
 
-    output = utils.test_data_filepath("translate.copc")
+    output = utils.test_data_filepath("translate.copc.laz")
 
     res = subprocess.run(
         [
