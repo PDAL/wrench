@@ -1,6 +1,7 @@
 import subprocess
 import typing
 
+import pdal
 import pytest
 import requests
 import utils
@@ -25,6 +26,11 @@ def _prepare_data():
         with open(base_data, "wb") as f:
             f.write(r.content)
             # Run the pdal_wrench command
+
+    laz_file = pdal.Reader(base_data.as_posix()).pipeline()
+    number_points = laz_file.execute()
+
+    assert number_points == 693895
 
     files_for_vpc = []
     for i in range(1, 5):
@@ -54,6 +60,13 @@ def _prepare_data():
 
             assert res.returncode == 0
 
+            clipped_laz_file = pdal.Reader(clipped_laz_file.as_posix()).pipeline()
+            number_points = clipped_laz_file.execute()
+
+            assert number_points > 0
+
+        assert clipped_laz_file.exists()
+
     vpc_file = utils.test_data_filepath("data.vpc")
 
     if not vpc_file.exists():
@@ -69,6 +82,13 @@ def _prepare_data():
         )
 
         assert res.returncode == 0
+
+    assert vpc_file.exists()
+
+    vpc = pdal.Reader(vpc_file.as_posix()).pipeline()
+    number_points = vpc.execute()
+
+    assert number_points == 338163
 
 
 @pytest.fixture
