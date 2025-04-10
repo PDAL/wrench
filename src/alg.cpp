@@ -162,8 +162,12 @@ void removeFiles(const std::vector<std::string> &tileOutputFiles, bool removePar
     fs::path outputDir = fs::path(tileOutputFiles[0]).parent_path();
     for (const std::string &f : tileOutputFiles)
     {
-        fs::remove(f);
+        if (fs::exists(fs::path(f)))
+        {
+            fs::remove(f);
+        }
     }
+
     if (removeParentDirIfEmpty && fs::is_empty(outputDir))
     {
         fs::remove(outputDir);
