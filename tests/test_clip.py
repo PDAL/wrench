@@ -76,7 +76,7 @@ def test_clip_laz_to_copc(main_laz_file: str):
 def test_clip_vpc_to_copc(vpc_file: str):
     """Test clip vpc to copc function"""
 
-    clipped_file = utils.test_data_filepath("clipped_to_check.copc.laz")
+    clipped_file = utils.test_data_filepath("clipped-vpc.copc.laz")
 
     res = subprocess.run(
         [

@@ -5,7 +5,7 @@ import pdal
 import utils
 
 
-def test_this_laz_to_las(main_laz_file: str):
+def test_thin_laz_to_las(main_laz_file: str):
     """Test thin to las function"""
 
     output = utils.test_data_filepath("thin.las")
@@ -61,10 +61,10 @@ def test_thin_laz_to_copc(main_laz_file: str):
     assert number_of_points == 138779
 
 
-def test_translate_vpc_to_copc(vpc_file: str):
-    """Test translate vpc to copc function"""
+def test_thin_vpc_to_copc(vpc_file: str):
+    """Test thin vpc to copc function"""
 
-    output = utils.test_data_filepath("translate.copc.laz")
+    output = utils.test_data_filepath("thin-vpc.copc.laz")
 
     res = subprocess.run(
         [
