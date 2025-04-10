@@ -192,7 +192,8 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
             // for input file /x/y/z.las that goes to /tmp/hello.vpc,
             // individual output file will be called /tmp/hello/z.las
             fs::path inputBasename = fs::path(f.filename).stem();
-
+            
+            // if the output is not VPC  las file format is forced to avoid time spent on compression, files will be later merged into single output and removed anyways
             if (!ends_with(outputFile, ".vpc"))
                 tile.outputFilename = (outputSubdir / inputBasename).string() + ".las";
             else
