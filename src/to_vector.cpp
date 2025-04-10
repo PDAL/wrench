@@ -169,6 +169,11 @@ void ToVector::finalize(std::vector<std::unique_ptr<PipelineManager>>&)
             // close file
             outputStreamFile.close();
         }
+        else 
+        {
+            std::cerr << "Failed to open VRT file for writing: " << vrtFile.string() << std::endl;
+            return;
+        }
 
         // options for translate - empty
         GDALVectorTranslateOptions *options = GDALVectorTranslateOptionsNew(nullptr, NULL);
@@ -178,6 +183,8 @@ void ToVector::finalize(std::vector<std::unique_ptr<PipelineManager>>&)
         if (!vrtDs)
         {
             std::cerr << "Failed to open composite VRT file" << std::endl;
+            fs::remove(vrtFile);
+            return;
         }
 
         // translate to resulting file and check it
@@ -185,6 +192,9 @@ void ToVector::finalize(std::vector<std::unique_ptr<PipelineManager>>&)
         if (!resultDS)
         {
             std::cerr << "Failed to create output file" << std::endl;
+            GDALClose(vrtDs);
+            fs::remove(vrtFile);
+            return;
         }
         
         // close datasets
