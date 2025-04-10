@@ -138,6 +138,7 @@ void Merge::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipe
 
             VirtualPointCloud vpc;
             if (!vpc.read(inputFile))
+                std::cerr << "could not open input VPC: " << inputFile << std::endl;
                 return;
             
             for (const VirtualPointCloud::File& vpcSingleFile : vpc.files)
