@@ -216,7 +216,7 @@ When algorithms create derived VPCs, by default they use uncompressed LAS, but `
 | boundary | multi-threaded | per file |
 | density | multi-threaded | spatial tiling |
 | clip | multi-threaded | per file |
-| merge | not supported | |
+| merge | single-threaded | |
 | tile | multi-threaded | per file |
 | thin | multi-threaded | per file |
 | to_raster | multi-threaded | spatial tiling |
