@@ -24,6 +24,7 @@ add_executable(pdal_wrench
     src/to_raster.cpp
     src/to_raster_tin.cpp
     src/to_vector.cpp
+    src/transform.cpp
     src/translate.cpp
     src/utils.cpp
     src/vpc.cpp
