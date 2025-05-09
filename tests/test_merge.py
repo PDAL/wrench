@@ -80,3 +80,27 @@ def test_merge_vpc(vpc_file: str):
     assert isinstance(array[0]["Y"], np.float64)
     assert isinstance(array[0]["Z"], np.float64)
     assert isinstance(array[0]["Intensity"], np.uint16)
+
+
+def test_merge_to_copc(laz_files: typing.List[str]):
+    """Test merge to copc function"""
+
+    merged_copc_file = utils.test_data_filepath("data_merged.copc.laz")
+
+    res = subprocess.run(
+        [
+            utils.pdal_wrench_path(),
+            "merge",
+            f"--output={merged_copc_file.as_posix()}",
+            *laz_files,
+        ],
+        check=True,
+    )
+
+    assert res.returncode == 0
+
+    pipeline = pdal.Reader(filename=merged_copc_file.as_posix()).pipeline()
+
+    number_of_points = pipeline.execute()
+
+    assert number_of_points == 97965
