@@ -90,6 +90,28 @@ def _prepare_data():
 
     assert number_points == 338163
 
+    base_copc_data = utils.test_data_filepath("stadium-utm.copc.laz")
+
+    if not base_copc_data.exists():
+        res = subprocess.run(
+            [
+                utils.pdal_wrench_path(),
+                "translate",
+                f"--input={base_data.as_posix()}",
+                f"--output={base_copc_data.as_posix()}",
+            ],
+            check=True,
+        )
+
+        assert res.returncode == 0
+
+    assert base_copc_data.exists()
+
+    vpc = pdal.Reader.copc(base_copc_data.as_posix()).pipeline()
+    number_points = vpc.execute()
+
+    assert number_points == 693895
+
 
 @pytest.fixture
 def laz_files() -> typing.List[str]:
@@ -110,3 +132,9 @@ def main_laz_file() -> str:
 def vpc_file() -> str:
     "Return path to the vpc file"
     return utils.test_data_filepath("data.vpc").as_posix()
+
+
+@pytest.fixture
+def main_copc_file() -> str:
+    "Return path to the main copc file"
+    return utils.test_data_filepath("stadium-utm.copc.laz").as_posix()
