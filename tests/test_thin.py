@@ -87,3 +87,31 @@ def test_thin_vpc_to_copc(vpc_file: str):
     number_of_points = pipeline.execute()
 
     assert number_of_points == 19593
+
+
+def test_thin_copc_to_laz(main_copc_file: str):
+    """Test thin copc to laz function"""
+
+    output = utils.test_data_filepath("thin-copc-input.laz")
+
+    res = subprocess.run(
+        [
+            utils.pdal_wrench_path(),
+            "thin",
+            "--mode=every-nth",
+            "--step-every-nth=5",
+            f"--input={main_copc_file}",
+            f"--output={output.as_posix()}",
+        ],
+        check=True,
+    )
+
+    assert res.returncode == 0
+
+    assert output.exists()
+
+    pipeline = pdal.Reader(filename=output.as_posix()).pipeline()
+
+    number_of_points = pipeline.execute()
+
+    assert number_of_points == 138779

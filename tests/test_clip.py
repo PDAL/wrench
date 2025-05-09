@@ -98,3 +98,30 @@ def test_clip_vpc_to_copc(vpc_file: str):
     number_of_points = pipeline.execute()
 
     assert number_of_points == 19983
+
+
+def test_clip_copc_to_laz(main_copc_file: str):
+    """Test clip las function"""
+
+    clipped_laz_file = utils.test_data_filepath("clipped-copc-input.laz")
+
+    res = subprocess.run(
+        [
+            utils.pdal_wrench_path(),
+            "clip",
+            f"--output={clipped_laz_file.as_posix()}",
+            f"--input={main_copc_file}",
+            f"--polygon={utils.test_data_filepath('rectangle1.gpkg')}",
+        ],
+        check=True,
+    )
+
+    assert res.returncode == 0
+
+    assert clipped_laz_file.exists()
+
+    pipeline = pdal.Reader(filename=clipped_laz_file.as_posix()).pipeline()
+
+    number_of_points = pipeline.execute()
+
+    assert number_of_points == 66832
