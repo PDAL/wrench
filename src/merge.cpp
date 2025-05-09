@@ -156,6 +156,11 @@ void Merge::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipe
     tile.inputFilenames = inputFiles;
     tile.outputFilename = outputFile;
 
+    if (ends_with(outputFile, ".copc.laz"))
+    {
+        isStreaming = false;
+    }
+
     pipelines.push_back(pipeline(&tile));
 
     // only algs with single input have the number of points figured out already
