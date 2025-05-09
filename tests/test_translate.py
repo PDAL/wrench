@@ -81,3 +81,29 @@ def test_translate_vpc_to_copc(vpc_file: str):
     number_of_points = pipeline.execute()
 
     assert number_of_points == 97965
+
+
+def test_translate_copc_to_laz(main_copc_file: str):
+    """Test translate copc to copc function"""
+
+    output = utils.test_data_filepath("translate-copc-input.laz")
+
+    res = subprocess.run(
+        [
+            utils.pdal_wrench_path(),
+            "translate",
+            f"--input={main_copc_file}",
+            f"--output={output.as_posix()}",
+        ],
+        check=True,
+    )
+
+    assert res.returncode == 0
+
+    assert output.exists()
+
+    pipeline = pdal.Reader(filename=output.as_posix()).pipeline()
+
+    number_of_points = pipeline.execute()
+
+    assert number_of_points == 693895
