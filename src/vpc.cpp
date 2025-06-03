@@ -16,14 +16,15 @@
 #include <thread>
 namespace fs = std::filesystem;
 
+// This include must precede any PDAL includes, to suppress its bundled JSON library.
+#include "nlohmann/json.hpp"
+
 #include "vpc.hpp"
 #include "utils.hpp"
 
 #include <pdal/Polygon.hpp>
 #include <pdal/Stage.hpp>
 #include <pdal/util/ProgramArgs.hpp>
-
-#include "nlohmann/json.hpp"
 
 
 using json = nlohmann::json;
