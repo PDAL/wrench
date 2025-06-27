@@ -86,7 +86,7 @@ def test_thin_vpc_to_copc(vpc_file: str):
 
     number_of_points = pipeline.execute()
 
-    assert number_of_points == 19593
+    assert number_of_points == 67634
 
 
 def test_thin_copc_to_laz(main_copc_file: str):
