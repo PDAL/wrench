@@ -16,7 +16,7 @@ import utils
         ("vpc_copc_file", utils.test_data_filepath("translate.vpc"), 338163),
     ],
 )
-def test_translate_laz_to_las(
+def test_translate_files(
     input_type: str,
     output: Path,
     point_count: int,
