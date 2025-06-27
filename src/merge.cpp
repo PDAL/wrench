@@ -99,6 +99,15 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
         last.push_back(filterExpr);
     }
 
+    if (ends_with(tile->outputFilename, ".copc.laz"))
+    {
+        Stage *merge = &manager->makeFilter("filters.merge");
+        for (Stage *stage : last)
+            merge->setInput(*stage);
+        last.clear();
+        last.push_back(merge);
+    }
+
     pdal::Options options;
     options.add(pdal::Option("forward", "all"));
     Stage* writer = &manager->makeWriter(tile->outputFilename, "", options);
