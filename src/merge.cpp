@@ -99,6 +99,9 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
         last.push_back(filterExpr);
     }
 
+    // this is a special case for merging COPC files
+    // writers.copc does not support multiple inputs
+    //  merge step is necessary before writing the output
     if (ends_with(tile->outputFilename, ".copc.laz"))
     {
         Stage *merge = &manager->makeFilter("filters.merge");
