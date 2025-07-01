@@ -135,7 +135,7 @@ def _prepare_data():
 
         assert res.returncode == 0
 
-    assert vpc_file.exists()
+    assert vpc_copc_file.exists()
 
     vpc_copc = pdal.Reader(vpc_copc_file.as_posix()).pipeline()
     number_points = vpc_copc.execute()
