@@ -1,15 +1,23 @@
 import subprocess
+from pathlib import Path
 
+import pytest
 import utils
 from osgeo import ogr
 
 ogr.UseExceptions()
 
 
-def test_to_vector_las_file(main_laz_file: str):
-    """Test to_vector las function"""
+@pytest.mark.parametrize(
+    "input_path,gpkg_file,point_count",
+    [
+        (utils.test_data_filepath("stadium-utm.laz"), utils.test_data_filepath("points-laz.gpkg"), 693895),
+        (utils.test_data_filepath("data.vpc"), utils.test_data_filepath("points-vpc.gpkg"), 338163),
+    ],
+)
+def test_to_vector(input_path: Path, gpkg_file: Path, point_count: int):
+    """Test to_vector function"""
 
-    gpkg_file = utils.test_data_filepath("points.gpkg")
     if gpkg_file.exists():
         gpkg_file.unlink()
 
@@ -18,7 +26,7 @@ def test_to_vector_las_file(main_laz_file: str):
             utils.pdal_wrench_path(),
             "to_vector",
             f"--output={gpkg_file.as_posix()}",
-            f"--input={main_laz_file}",
+            f"--input={input_path.as_posix()}",
         ],
         check=True,
     )
@@ -36,41 +44,4 @@ def test_to_vector_las_file(main_laz_file: str):
 
     assert layer
     assert layer.GetName() == "points"
-    assert layer.GetFeatureCount() == 693895
-
-
-def test_to_vector_vpc_file(vpc_laz_file: str):
-    """Test to_vector las function"""
-
-    gpkg_file = utils.test_data_filepath("points.gpkg")
-    if gpkg_file.exists():
-        gpkg_file.unlink()
-
-    res = subprocess.run(
-        [
-            utils.pdal_wrench_path(),
-            "to_vector",
-            f"--output={gpkg_file.as_posix()}",
-            f"--input={vpc_laz_file}",
-        ],
-        check=True,
-    )
-
-    assert res.returncode == 0
-
-    assert gpkg_file.exists()
-
-    temp_folder = gpkg_file.parent / gpkg_file.stem
-
-    assert not temp_folder.exists()
-
-    ds: ogr.DataSource = ogr.Open(gpkg_file.as_posix())
-
-    assert ds
-    assert ds.GetLayerCount() == 1
-
-    layer: ogr.Layer = ds.GetLayer(0)
-
-    assert layer
-    assert layer.GetName() == "points"
-    assert layer.GetFeatureCount() == 338163
+    assert layer.GetFeatureCount() == point_count
