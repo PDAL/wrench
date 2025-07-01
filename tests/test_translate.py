@@ -11,7 +11,11 @@ import utils
     [
         (utils.test_data_filepath("stadium-utm.laz"), utils.test_data_filepath("translate.las"), 693895),
         (utils.test_data_filepath("stadium-utm.laz"), utils.test_data_filepath("translate.copc.laz"), 693895),
-        (utils.test_data_filepath("stadium-utm.copc.laz"), 693895),
+        (
+            utils.test_data_filepath("stadium-utm.copc.laz"),
+            utils.test_data_filepath("translate-copc-input.copc.laz"),
+            693895,
+        ),
         (utils.test_data_filepath("data.vpc"), utils.test_data_filepath("translate-vpc.copc.laz"), 338163),
         (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("translate.vpc"), 338163),
     ],
