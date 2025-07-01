@@ -17,7 +17,7 @@ import utils
     ],
 )
 def test_translate_files(input_path: Path, output_path: Path, point_count: int):
-    """Test translate las function"""
+    """Test translate function"""
 
     print(f"{utils.pdal_wrench_path()} translate --input={input_path} --output={output_path.as_posix()}")
     res = subprocess.run(
