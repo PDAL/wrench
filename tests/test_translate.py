@@ -22,7 +22,7 @@ def test_translate_files(
     point_count: int,
     main_laz_file: str,
     main_copc_file: str,
-    vpc_file: str,
+    vpc_laz_file: str,
     vpc_copc_file: str,
 ):
     """Test translate las function"""
@@ -32,7 +32,7 @@ def test_translate_files(
     elif input_type == "main_copc":
         input = main_copc_file
     elif input_type == "vpc_file":
-        input = vpc_file
+        input = vpc_laz_file
     elif input_type == "vpc_copc_file":
         input = vpc_copc_file
     else:

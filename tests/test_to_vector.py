@@ -39,7 +39,7 @@ def test_to_vector_las_file(main_laz_file: str):
     assert layer.GetFeatureCount() == 693895
 
 
-def test_to_vector_vpc_file(vpc_file: str):
+def test_to_vector_vpc_file(vpc_laz_file: str):
     """Test to_vector las function"""
 
     gpkg_file = utils.test_data_filepath("points.gpkg")
@@ -51,7 +51,7 @@ def test_to_vector_vpc_file(vpc_file: str):
             utils.pdal_wrench_path(),
             "to_vector",
             f"--output={gpkg_file.as_posix()}",
-            f"--input={vpc_file}",
+            f"--input={vpc_laz_file}",
         ],
         check=True,
     )

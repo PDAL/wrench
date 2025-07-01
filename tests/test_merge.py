@@ -53,13 +53,13 @@ def test_merge_to_file(input_type: str, output: Path, laz_files: typing.List[str
 def test_merge_vpc(
     input_type: str,
     output: Path,
-    vpc_file: str,
+    vpc_laz_file: str,
     vpc_copc_file: str,
 ):
     """Test merge of vpc file"""
 
     if input_type == "vpc_file":
-        input = vpc_file
+        input = vpc_laz_file
     elif input_type == "vpc_copc_file":
         input = vpc_copc_file
     else:

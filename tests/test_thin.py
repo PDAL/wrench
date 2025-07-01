@@ -61,7 +61,7 @@ def test_thin_laz_to_copc(main_laz_file: str):
     assert number_of_points == 138779
 
 
-def test_thin_vpc_to_copc(vpc_file: str):
+def test_thin_vpc_to_copc(vpc_laz_file: str):
     """Test thin vpc to copc function"""
 
     output = utils.test_data_filepath("thin-vpc.copc.laz")
@@ -72,7 +72,7 @@ def test_thin_vpc_to_copc(vpc_file: str):
             "thin",
             "--mode=every-nth",
             "--step-every-nth=5",
-            f"--input={vpc_file}",
+            f"--input={vpc_laz_file}",
             f"--output={output.as_posix()}",
         ],
         check=True,

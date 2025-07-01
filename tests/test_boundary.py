@@ -43,7 +43,7 @@ def test_boundary_copc(main_copc_file: str):
     assert output.exists()
 
 
-def test_boundary_on_vpc(vpc_file: str):
+def test_boundary_on_vpc(vpc_laz_file: str):
     """Test boundary on vpc function"""
 
     output = utils.test_data_filepath("boundary-vpc.gpkg")
@@ -53,7 +53,7 @@ def test_boundary_on_vpc(vpc_file: str):
             utils.pdal_wrench_path(),
             "boundary",
             f"--output={output.as_posix()}",
-            f"--input={vpc_file}",
+            f"--input={vpc_laz_file}",
         ],
         check=True,
     )
