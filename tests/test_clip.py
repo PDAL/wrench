@@ -61,11 +61,11 @@ def test_input_file_output_file(
         ("vpc_copc_file", utils.test_data_filepath("clipped-vpc-copc-files.copc.laz")),
     ],
 )
-def test_clip_vpc(input_type: str, output: Path, vpc_file: str, vpc_copc_file: str):
+def test_clip_vpc(input_type: str, output: Path, vpc_laz_file: str, vpc_copc_file: str):
     """Test clip vpc to different outputs function"""
 
     if input_type == "vpc_file":
-        input = vpc_file
+        input = vpc_laz_file
     elif input_type == "vpc_copc_file":
         input = vpc_copc_file
     else:

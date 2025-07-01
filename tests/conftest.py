@@ -34,7 +34,7 @@ def _prepare_data():
 
     files_for_vpc = []
     files_for_vpc_copc = []
-    
+
     for i in range(1, 5):
 
         clip_gpkg_file = utils.test_data_filepath(f"rectangle{i}.gpkg")
@@ -181,13 +181,14 @@ def main_laz_file() -> str:
 
 
 @pytest.fixture
-def vpc_file() -> str:
-    "Return path to the vpc file"
+def vpc_laz_file() -> str:
+    "Return path to the vpc file referencing LAZ files"
     return utils.test_data_filepath("data.vpc").as_posix()
+
 
 @pytest.fixture
 def vpc_copc_file() -> str:
-    "Return path to the vpc file"
+    "Return path to the vpc file referencing COPC files"
     return utils.test_data_filepath("data_copc.vpc").as_posix()
 
 
