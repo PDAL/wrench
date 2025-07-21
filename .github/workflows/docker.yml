@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   build-and-push-image:
+    name: Build and Push
     runs-on: ubuntu-latest
     env:
       PUSH_PACKAGES: ${{ github.repository_owner == 'PDAL' && github.event_name != 'pull_request'  }}
@@ -91,4 +92,4 @@ jobs:
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+          push-to-registry: ${{ env.PUSH_PACKAGES == 'true' }}
