@@ -46,7 +46,7 @@ jobs:
         with:
           daemon-config: |
             {
-              "debug": true,
+              "debug": false,
               "features": {
                 "containerd-snapshotter": true
               }
