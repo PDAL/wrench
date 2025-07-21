@@ -46,7 +46,7 @@ jobs:
         with:
           daemon-config: |
             {
-              "debug": true,
+              "debug": false,
               "features": {
                 "containerd-snapshotter": true
               }
@@ -67,7 +67,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/pdal/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -91,6 +91,6 @@ jobs:
         if: ${{ env.PUSH_PACKAGES == 'true' }}
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-name: ${{ env.REGISTRY }}/pdal/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: ${{ env.PUSH_PACKAGES == 'true' }}
