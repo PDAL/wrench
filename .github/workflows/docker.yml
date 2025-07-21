@@ -20,6 +20,8 @@ concurrency:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    env:
+      PUSH_PACKAGES: ${{ github.repository_owner == 'PDAL' && github.event_name != 'pull_request'  }}
 
     permissions:
       contents: read
@@ -30,6 +32,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Lint
+        id: lint
+        run: |
+          echo "are we pushing packages" ${{ env.PUSH_PACKAGES }}
+          echo "event_name" ${{ github.event_name }}
+          echo "ref" ${{ github.ref }}
 
       - name: Set up Docker
         uses: docker/setup-docker-action@v4
@@ -72,7 +81,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
+          push: ${{ env.PUSH_PACKAGES == 'true' }}
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
