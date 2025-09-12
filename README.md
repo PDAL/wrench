@@ -165,6 +165,12 @@ Exports point cloud data to a 2D raster grid like `to_raster` does, but using a 
 pdal_wrench to_raster_tin --output=raster.tif --resolution=1 --input=data.las
 ```
 
+It is possible to prevent interpolation of large triangles using `max-triangle-edge-length` argument:
+
+```
+pdal_wrench to_raster_tin --output=raster.tif --resolution=1 --max-triangle-edge-length=100 --input=data.las
+```
+
 ## to_vector
 
 Exports point cloud data to a vector layer with 3D points (a GeoPackage), optionally with extra attributes:
