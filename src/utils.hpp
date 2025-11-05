@@ -49,9 +49,9 @@ struct Tiling
 // where N,M are some integer values
 struct TileAlignment
 {
-    double originX;
-    double originY;
-    double tileSize;
+    double originX {-1};
+    double originY {-1};
+    double tileSize {1000};
 
     // returns tiling that fully covers given bounding box, using this tile alignment
     Tiling coverBounds(const BOX2D &box) const
