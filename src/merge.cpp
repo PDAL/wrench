@@ -123,6 +123,7 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
 void Merge::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
 {
     ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression, filterBounds);
+    std::vector<std::string> inputFilesToProcess;
     if (!inputFileList.empty())
     {
         std::ifstream inputFile(inputFileList);
@@ -135,36 +136,37 @@ void Merge::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipe
 
         while (std::getline(inputFile, line))
         {
-            inputFiles.push_back(line);
+            inputFilesToProcess.push_back(line);
         }
     }
     
-    std::vector<std::string> vpcFilesToRemove;
-    vpcFilesToRemove.reserve(inputFiles.size());
+    inputFiles.reserve(inputFilesToProcess.size());
 
-    for (const std::string& inputFile : inputFiles)
-    {
+    std::function<void(const std::string& inputFile)> processInputFile;
+    processInputFile = [&processInputFile,this](const std::string& inputFile) {
         if (ends_with(inputFile, ".vpc"))
-        {   
-            vpcFilesToRemove.push_back(inputFile);
-
+        {
             VirtualPointCloud vpc;
             if (!vpc.read(inputFile))
             {
                 std::cerr << "could not open input VPC: " << inputFile << std::endl;
                 return;
             }
-            
+
             for (const VirtualPointCloud::File& vpcSingleFile : vpc.files)
             {
-                inputFiles.push_back(vpcSingleFile.filename);
+                processInputFile(vpcSingleFile.filename);
             }
         }
-    }
+        else
+        {
+            inputFiles.push_back(inputFile);
+        }
+    };
 
-    for (const std::string& f : vpcFilesToRemove)
+    for (const std::string& inputFile : inputFilesToProcess)
     {
-        inputFiles.erase(std::remove(inputFiles.begin(), inputFiles.end(), f), inputFiles.end());
+        processInputFile(inputFile);
     }
 
     tile.inputFilenames = inputFiles;
