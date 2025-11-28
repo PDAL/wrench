@@ -333,3 +333,30 @@ struct ToVector : public Alg
     virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 };
+
+struct HeightAboveGround : public Alg
+{   
+    HeightAboveGround() { isStreaming = false; }
+    
+    // parameters from the user
+    std::string outputFile;
+    std::string outputFormat;  // las / laz / copc / vpc
+    int count = 1;
+    int maxDistance = 0;
+    bool replaceZWithHeightAboveGround = false;
+    
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argOutputFormat = nullptr;
+    pdal::Arg* argCount = nullptr;
+    pdal::Arg* argMaxDistance = nullptr;
+    pdal::Arg* argReplaceZWithHeightAboveGround = nullptr;
+
+    std::vector<std::string> tileOutputFiles;
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};
