@@ -40,6 +40,9 @@ void Translate::addArgs()
     programArgs.add("transform-coord-op", "Details on how to do the transform of coordinates when --transform-crs is used. "
                     "It can be a PROJ pipeline or a WKT2 CoordinateOperation. "
                     "When not specified, PROJ will pick the default transform.", transformCoordOp);
+    programArgs.add("transform-matrix", "A whitespace-delimited transformation matrix. "
+                    "The matrix is assumed to be presented in row-major order. "
+                    "Only matrices with sixteen elements are allowed.", transformMatrix);
 }
 
 bool Translate::checkArgs()
@@ -72,7 +75,7 @@ bool Translate::checkArgs()
 }
 
 
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::string assignCrs, std::string transformCrs, std::string transformCoordOp)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::string assignCrs, std::string transformCrs, std::string transformCoordOp, std::string transformMatrix)
 {
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
 
@@ -124,6 +127,14 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::str
             reproject = &manager->makeFilter( "filters.reprojection", *last, transform_opts);
         }
         last = reproject;
+    }
+
+    if (!transformMatrix.empty())
+    {
+        Options matrix_opts;
+        matrix_opts.add(pdal::Option("matrix", transformMatrix));
+        Stage* matrixTransform = &manager->makeFilter( "filters.transformation", *last, matrix_opts);
+        last = matrixTransform;
     }
 
     pdal::Options writer_opts;
@@ -178,7 +189,7 @@ void Translate::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& 
 
             tileOutputFiles.push_back(tile.outputFilename);
 
-            pipelines.push_back(pipeline(&tile, assignCrs, transformCrs, transformCoordOp));
+            pipelines.push_back(pipeline(&tile, assignCrs, transformCrs, transformCoordOp, transformMatrix));
         }
     }
     else
@@ -190,7 +201,7 @@ void Translate::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& 
         ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression, filterBounds);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
-        pipelines.push_back(pipeline(&tile, assignCrs, transformCrs, transformCoordOp));
+        pipelines.push_back(pipeline(&tile, assignCrs, transformCrs, transformCoordOp, transformMatrix));
     }
 }
 
