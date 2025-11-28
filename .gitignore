@@ -6,3 +6,4 @@ build
 /tests/data/*.laz
 /tests/data/*.las
 /tests/data/*.vpc
+/tests/data/output/**
