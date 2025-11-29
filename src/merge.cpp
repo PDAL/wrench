@@ -61,7 +61,8 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
     std::vector<Stage*> readers;
     for (const std::string& f : tile->inputFilenames)
     {
-        readers.push_back(&manager->makeReader(f, ""));
+        Stage& reader = makeReader( manager.get(), f );
+        readers.push_back(&reader);
     }
 
     std::vector<Stage*> last = readers;
@@ -111,11 +112,11 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
         last.push_back(merge);
     }
 
-    pdal::Options options;
-    options.add(pdal::Option("forward", "all"));
-    Stage* writer = &manager->makeWriter(tile->outputFilename, "", options);
+    Stage* writer = &makeWriter(manager.get(), nullptr, tile->outputFilename);
     for (Stage *s : last)
         writer->setInput(*s);
+
+    pdal::PipelineWriter::writePipeline(writer, "debug_merge_pipeline.json");
 
     return manager;
 }
