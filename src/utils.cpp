@@ -262,3 +262,46 @@ BOX2D intersectTileBoxWithFilterBox(const BOX2D &tileBox, const BOX2D &filterBox
         return BOX2D();  // invalid box
     }
 }
+
+pdal::Stage &makeReader(pdal::PipelineManager *manager, const std::string &inputFile, pdal::Options options)
+{   
+    pdal::Stage &reader = manager->makeReader( inputFile, "" );
+
+    pdal::Options reader_opts;
+    
+    if (!ends_with(inputFile, ".copc.laz") && (ends_with(inputFile, ".laz") || ends_with(inputFile, ".las")))
+    {
+        reader_opts.add(pdal::Option("use_eb_vlr", true));
+    }
+
+    reader_opts.add(options);
+
+    reader.addOptions(reader_opts);
+
+    return reader;
+}
+
+pdal::Stage &makeWriter(pdal::PipelineManager *manager, pdal::Stage *parent, const std::string &outputFile, pdal::Options options)
+{   
+    pdal::Stage *writerPtr = nullptr;
+    if (parent)
+    {
+        writerPtr = &manager->makeWriter(outputFile, "", *parent);
+    }
+    else
+    {
+        writerPtr = &manager->makeWriter(outputFile, "");
+    }
+
+    pdal::Stage &writer = *writerPtr;
+
+    pdal::Options writer_opts;
+    writer_opts.add(pdal::Option("forward", "all"));
+    writer_opts.add(pdal::Option("extra_dims", "all"));
+
+    writer_opts.add(options);
+
+    writer.addOptions(writer_opts);
+
+    return writer;
+}
