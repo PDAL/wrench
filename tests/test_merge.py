@@ -10,8 +10,8 @@ import utils
 @pytest.mark.parametrize(
     "output_path",
     [
-        (utils.test_data_filepath("data_merged.las")),
-        (utils.test_data_filepath("data_merged.copc.laz")),
+        (utils.test_data_output_filepath("data_merged.las", "merge")),
+        (utils.test_data_output_filepath("data_merged.copc.laz", "merge")),
     ],
 )
 def test_merge_to_file(output_path: Path, laz_files: typing.List[str]):
@@ -39,10 +39,13 @@ def test_merge_to_file(output_path: Path, laz_files: typing.List[str]):
 @pytest.mark.parametrize(
     "input_path,output_path",
     [
-        (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("merged-copc-vpc.las")),
-        (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("merged-copc-vpc.cop.laz")),
-        (utils.test_data_filepath("data.vpc"), utils.test_data_filepath("merged-vpc.copc.laz")),
-        (utils.test_data_filepath("data.vpc"), utils.test_data_filepath("merged-vpc.las")),
+        (utils.test_data_filepath("data_copc.vpc"), utils.test_data_output_filepath("merged-copc-vpc.las", "merge")),
+        (
+            utils.test_data_filepath("data_copc.vpc"),
+            utils.test_data_output_filepath("merged-copc-vpc.cop.laz", "merge"),
+        ),
+        (utils.test_data_filepath("data.vpc"), utils.test_data_output_filepath("merged-vpc.copc.laz", "merge")),
+        (utils.test_data_filepath("data.vpc"), utils.test_data_output_filepath("merged-vpc.las", "merge")),
     ],
 )
 def test_merge_vpc(
