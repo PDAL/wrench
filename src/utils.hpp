@@ -262,4 +262,4 @@ bool rasterTilesToCog(const std::vector<std::string> &inputFiles, const std::str
 
 pdal::Stage &makeReader( pdal::PipelineManager *manager, const std::string &inputFile, pdal::Options options = pdal::Options() );
 
-pdal::Stage &makeWriter(pdal::PipelineManager *manager, pdal::Stage *parent, const std::string &outputFile, pdal::Options options = pdal::Options() );
+pdal::Stage &makeWriter(pdal::PipelineManager *manager, const std::string &outputFile, pdal::Stage *parent, pdal::Options options = pdal::Options() );

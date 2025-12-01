@@ -112,7 +112,7 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
         last.push_back(merge);
     }
 
-    Stage* writer = &makeWriter(manager.get(), nullptr, tile->outputFilename);
+    Stage* writer = &makeWriter(manager.get(), tile->outputFilename, nullptr);
     for (Stage *s : last)
         writer->setInput(*s);
 

@@ -281,7 +281,7 @@ pdal::Stage &makeReader(pdal::PipelineManager *manager, const std::string &input
     return reader;
 }
 
-pdal::Stage &makeWriter(pdal::PipelineManager *manager, pdal::Stage *parent, const std::string &outputFile, pdal::Options options)
+pdal::Stage &makeWriter(pdal::PipelineManager *manager, const std::string &outputFile, pdal::Stage *parent, pdal::Options options)
 {   
     pdal::Stage *writerPtr = nullptr;
     if (parent)
