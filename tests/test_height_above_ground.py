@@ -91,3 +91,41 @@ def test_height_above_ground_files(
             assert max(values) == pytest.approx(43.82, abs=0.01)
 
     assert number_of_points == point_count
+
+
+def test_run_with_bad_algorithms():
+    input_path = utils.test_data_filepath("stadium-utm.laz")
+    output_path = utils.test_data_output_filepath("stadium-utm.las", "height_above_ground")
+
+    # missing algorithm
+    res = subprocess.run(
+        [
+            utils.pdal_wrench_path(),
+            "height_above_ground",
+            f"--input={input_path.as_posix()}",
+            f"--output={output_path.as_posix()}",
+        ],
+        text=True,
+        capture_output=True,
+    )
+    assert res.returncode == 0
+    assert "missing algorithm" in res.stderr
+
+    # unknown algorithm
+
+    unknown_algorithm = "invalid_algorithm"
+
+    res = subprocess.run(
+        [
+            utils.pdal_wrench_path(),
+            "height_above_ground",
+            f"--input={input_path.as_posix()}",
+            f"--output={output_path.as_posix()}",
+            f"--algorithm={unknown_algorithm}",
+        ],
+        text=True,
+        capture_output=True,
+    )
+
+    assert res.returncode == 0
+    assert f"unknown algorithm: {unknown_algorithm}" in res.stderr
