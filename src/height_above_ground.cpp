@@ -36,10 +36,15 @@ void HeightAboveGround::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
     argOutputFormat = &programArgs.add("output-format", "Output format (las/laz/copc)", outputFormat);
+    argAlgorithm = &programArgs.add("algorithm", "Height Above Ground algorithm to use: nn (Nearest Neighbor) or delaunay (Delaunay).", algorithm, "nn");
+    argReplaceZWithHeightAboveGround = &programArgs.add("replace-z", "Replace Z dimension with height above ground (true/false).", replaceZWithHeightAboveGround, false);
 
-    argCount = &programArgs.add("count", "The number of ground neighbors to consider when determining the height above ground for a non-ground point", count);
-    argMaxDistance = &programArgs.add("max-distance", "Use only ground points within max_distance of non-ground point when performing neighbor interpolation.", maxDistance);
-    argReplaceZWithHeightAboveGround = &programArgs.add("replace-z", "Replace Z dimension with height above ground (true/false).", replaceZWithHeightAboveGround);
+    // args - NN
+    argNNCount = &programArgs.add("nn-count", "The number of ground neighbors to consider when determining the height above ground for a non-ground point", nnCount, 1);
+    argNNMaxDistance = &programArgs.add("nn-max-distance", "Use only ground points within max_distance of non-ground point when performing neighbor interpolation.", nnMaxDistance, 0);
+
+    // args - Delaunay
+    argDelaunayCount = &programArgs.add("delaunay-count", "The number of ground neighbors to consider when determining the height above ground for a non-ground point.", delaunayCount, 10);
 }
 
 bool HeightAboveGround::checkArgs()
@@ -61,26 +66,50 @@ bool HeightAboveGround::checkArgs()
     else
         outputFormat = "las";  // uncompressed by default
 
-    if (!argCount->set())
+    if (!argAlgorithm->set())
     {
-        count = 1; // default
+        std::cerr << "missing algorithm" << std::endl;
+        return false;
     }
-
-    if (!argMaxDistance->set())
+    else
     {
-        maxDistance = 0; // default
+        if (!(algorithm == "nn" || algorithm == "delaunay"))
+        {
+            std::cerr << "unknown algorithm: " << algorithm << std::endl;
+            return false;
+        }
     }
 
     if (!argReplaceZWithHeightAboveGround->set())
     {
         replaceZWithHeightAboveGround = false; // default
     }
-    
+
+    if (!argNNCount->set())
+    {
+        nnCount = 1; // default
+    }
+
+    if (!argNNMaxDistance->set())
+    {
+        nnMaxDistance = 0; // default
+    }
+
+    if (algorithm == "delaunay" && (argNNMaxDistance->set() || argNNCount->set()))
+    {
+        std::cout << "nn-* arguments are not supported with delaunay algorithm" << std::endl;
+    }
+
+    if (algorithm == "nn" && (argDelaunayCount->set()))
+    {
+        std::cout << "delaunay-count argument is not supported with nn algorithm" << std::endl;
+    }
+
     return true;
 }
 
 
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, int count, double maxDistance, bool replaceZWithHeightAboveGround)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::string algorithm, bool replaceZWithHeightAboveGround, int nnCount, double nnMaxDistance, int delaunayCount)
 {
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
 
@@ -115,20 +144,37 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, int coun
         last = &manager->makeFilter( "filters.expression", *last, filter_opts);
     }
 
-    Options hag_nn_opts;
-
-    if (count > 1)
+    // NN HAG filter
+    if (algorithm == "nn")
     {
-        hag_nn_opts.add(pdal::Option("count", count));
+        Options hag_nn_opts;
+
+        if (nnCount > 1)
+        {
+            hag_nn_opts.add(pdal::Option("count", nnCount));
+        }
+
+        if (nnMaxDistance > 0)
+        {
+            hag_nn_opts.add(pdal::Option("max_distance", nnMaxDistance));
+        }
+
+        last = &manager->makeFilter( "filters.hag_nn", *last, hag_nn_opts);
     }
 
-    if (maxDistance > 0)
+    // Delaunay HAG filter
+    if (algorithm == "delaunay")
     {
-        hag_nn_opts.add(pdal::Option("max_distance", maxDistance));
+        Options hag_delaunay_opts;
+
+        if (delaunayCount > 0)
+        {
+            hag_delaunay_opts.add(pdal::Option("count", delaunayCount));
+        }
+
+        last = &manager->makeFilter( "filters.hag_delaunay", *last, hag_delaunay_opts);
     }
 
-    last = &manager->makeFilter( "filters.hag_nn", *last, hag_nn_opts);
-    
     pdal::Options writer_opts;
     // let's use the same offset & scale & header & vlrs as the input
     writer_opts.add(pdal::Option("forward", "all"));
@@ -181,7 +227,7 @@ void HeightAboveGround::preparePipelines(std::vector<std::unique_ptr<PipelineMan
 
             tileOutputFiles.push_back(tile.outputFilename);
 
-            pipelines.push_back(pipeline(&tile, count, maxDistance, replaceZWithHeightAboveGround));
+            pipelines.push_back(pipeline(&tile, algorithm, replaceZWithHeightAboveGround, nnCount, nnMaxDistance, delaunayCount));
         }
     }
     else
@@ -189,7 +235,7 @@ void HeightAboveGround::preparePipelines(std::vector<std::unique_ptr<PipelineMan
         ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression, filterBounds);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
-        pipelines.push_back(pipeline(&tile, count, maxDistance, replaceZWithHeightAboveGround));
+        pipelines.push_back(pipeline(&tile, algorithm, replaceZWithHeightAboveGround, nnCount, nnMaxDistance, delaunayCount));
     }
 }
 

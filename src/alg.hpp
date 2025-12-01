@@ -341,16 +341,28 @@ struct HeightAboveGround : public Alg
     // parameters from the user
     std::string outputFile;
     std::string outputFormat;  // las / laz / copc / vpc
-    int count = 1;
-    int maxDistance = 0;
     bool replaceZWithHeightAboveGround = false;
+    std::string algorithm = "nn";
+
+    // NN parameters
+    int nnCount = 1;
+    int nnMaxDistance = 0;
+    
+    // Delaunay parameters
+    int delaunayCount = 10;
     
     // args - initialized in addArgs()
     pdal::Arg* argOutput = nullptr;
     pdal::Arg* argOutputFormat = nullptr;
-    pdal::Arg* argCount = nullptr;
-    pdal::Arg* argMaxDistance = nullptr;
     pdal::Arg* argReplaceZWithHeightAboveGround = nullptr;
+    pdal::Arg* argAlgorithm = nullptr;
+
+    // args -NN parameters
+    pdal::Arg* argNNCount = nullptr;
+    pdal::Arg* argNNMaxDistance = nullptr;
+
+    // args - Delaunay parameters
+    pdal::Arg* argDelaunayCount = nullptr;
 
     std::vector<std::string> tileOutputFiles;
 

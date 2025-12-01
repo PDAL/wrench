@@ -7,25 +7,28 @@ import utils
 
 
 @pytest.mark.parametrize(
-    "input_path,output_path,point_count,replace_z",
+    "input_path,output_path,point_count,replace_z,algorithm",
     [
         (
             utils.test_data_filepath("stadium-utm.laz"),
             utils.test_data_output_filepath("stadium-utm.las", "height_above_ground"),
             693895,
             True,
+            "nn",
         ),
         (
             utils.test_data_filepath("stadium-utm.laz"),
             utils.test_data_output_filepath("stadium-utm.copc.laz", "height_above_ground"),
             693895,
             False,
+            "nn",
         ),
         (
             utils.test_data_filepath("stadium-utm.copc.laz"),
             utils.test_data_output_filepath("stadium-utm-copc-input.copc.laz", "height_above_ground"),
             693895,
             False,
+            "nn",
         ),
         # (
         #     utils.test_data_filepath("data.vpc"),
@@ -38,10 +41,13 @@ import utils
             utils.test_data_output_filepath("stadium-utm-vpc-copc.vpc", "height_above_ground"),
             338163,
             False,
+            "delaunay",
         ),
     ],
 )
-def test_height_above_ground_files(input_path: Path, output_path: Path, point_count: int, replace_z: bool):
+def test_height_above_ground_files(
+    input_path: Path, output_path: Path, point_count: int, replace_z: bool, algorithm: str
+):
     """Test height_above_ground function"""
 
     res = subprocess.run(
@@ -50,11 +56,10 @@ def test_height_above_ground_files(input_path: Path, output_path: Path, point_co
             "height_above_ground",
             f"--input={input_path.as_posix()}",
             f"--output={output_path.as_posix()}",
+            f"--algorithm={algorithm}",
             f"--replace-z={str(replace_z).lower()}",
         ],
-        check=True,
     )
-    print(res.stdout)
 
     assert res.returncode == 0
 
@@ -72,7 +77,7 @@ def test_height_above_ground_files(input_path: Path, output_path: Path, point_co
         assert "HeightAboveGround" in dimensions
 
     # for non vpc files check values (vpc have different values)
-    if input_path.suffix.lower() != ".vpc":
+    if input_path.suffix.lower() != ".vpc" and algorithm == "nn":
         if replace_z:
             values = pipeline.arrays[0]["Z"]
             assert min(values) == pytest.approx(-0.85, abs=0.01)
