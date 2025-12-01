@@ -333,3 +333,56 @@ struct ToVector : public Alg
     virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 };
+
+struct ClassifyGround : public Alg
+{
+    ClassifyGround() { isStreaming = false; }
+
+    // parameters from the user
+    std::string outputFile;
+    std::string outputFormat;  // las / laz / copc
+    std::string algorithm;  // "pmf" or "smrf"
+
+    // common parameters for algorithms
+    double cellSize = 1.0;
+
+    // PMF parameters
+    bool pmfExponential = true;
+    double pmfInitialDistance = 0.15;
+    double pmfMaxDistance = 2.5;
+    double pmfMaxWindowSize = 33.0;
+    double pmfSlope = 1.0;
+
+    // SMRF parameters
+    double smrfScalar = 1.25;
+    double smrfSlope = 0.15;
+    double smrfThreshold = 0.5;
+    double smrfWindowSize = 18.0;
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argOutputFormat = nullptr;
+    pdal::Arg* argAlgorithm = nullptr;
+    pdal::Arg* argCellSize = nullptr;
+
+    // args - PMF
+    pdal::Arg* argPmfExponential = nullptr;
+    pdal::Arg* argPmfInitialDistance = nullptr;
+    pdal::Arg* argPmfMaxDistance = nullptr;
+    pdal::Arg* argPmfMaxWindowSize = nullptr;
+    pdal::Arg* argPmfSlope = nullptr; 
+
+    // args - SMRF
+    pdal::Arg* argSmrfScalar = nullptr;
+    pdal::Arg* argSmrfSlope = nullptr;
+    pdal::Arg* argSmrfThreshold = nullptr;
+    pdal::Arg* argSmrfWindowSize = nullptr;
+
+    std::vector<std::string> tileOutputFiles;
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};
