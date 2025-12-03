@@ -269,3 +269,9 @@ pdal::Stage &makeReader( pdal::PipelineManager *manager, const std::string &inpu
  * Create writer stage with some default options.
  */
 pdal::Stage &makeWriter(pdal::PipelineManager *manager, const std::string &outputFile, pdal::Stage *parent, pdal::Options options = pdal::Options() );
+
+/**
+ * Handle saving output for multiple tiles if the output is VPC or the data need to be merged.
+ */
+void buildOutput(std::string outputFile, std::vector<std::string> &tileOutputFiles);
+

@@ -23,6 +23,9 @@
 
 #include <gdal_utils.h>
 
+#include "vpc.hpp"
+#include "alg.hpp"
+
 using namespace pdal;
 
 
@@ -304,4 +307,33 @@ pdal::Stage &makeWriter(pdal::PipelineManager *manager, const std::string &outpu
     writer.addOptions(writer_opts);
 
     return writer;
+}
+
+void buildOutput(std::string outputFile, std::vector<std::string> &tileOutputFiles)
+{
+    std::vector<std::string> args;
+    args.push_back("--output=" + outputFile);
+    for (std::string f : tileOutputFiles)
+        args.push_back(f);
+
+    if (ends_with(outputFile, ".vpc"))
+    {
+        // now build a new output VPC
+        buildVpc(args);
+    }
+    else
+    {
+        // merge all the output files into a single file        
+        Merge merge;
+        // for copc set isStreaming to false
+        if (ends_with(outputFile, ".copc.laz"))
+        {
+            merge.isStreaming = false;
+        }
+
+        runAlg(args, merge);
+
+        // remove files as they are not needed anymore - they are merged
+        removeFiles(tileOutputFiles, true);
+    }
 }
