@@ -260,6 +260,12 @@ inline std::string join_strings(const std::vector<std::string>& list, char delim
 
 bool rasterTilesToCog(const std::vector<std::string> &inputFiles, const std::string &outputFile);
 
+/**
+ * Create reader stage with some default options.
+ */
 pdal::Stage &makeReader( pdal::PipelineManager *manager, const std::string &inputFile, pdal::Options options = pdal::Options() );
 
+/**
+ * Create writer stage with some default options.
+ */
 pdal::Stage &makeWriter(pdal::PipelineManager *manager, const std::string &outputFile, pdal::Stage *parent, pdal::Options options = pdal::Options() );
