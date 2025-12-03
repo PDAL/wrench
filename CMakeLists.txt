@@ -18,6 +18,7 @@ add_executable(pdal_wrench
     src/boundary.cpp
     src/clip.cpp
     src/density.cpp
+    src/filter_noise.cpp
     src/info.cpp
     src/merge.cpp
     src/thin.cpp
