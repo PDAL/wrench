@@ -341,42 +341,22 @@ struct ClassifyGround : public Alg
     // parameters from the user
     std::string outputFile;
     std::string outputFormat;  // las / laz / copc
-    std::string algorithm;  // "pmf" or "smrf"
 
-    // common parameters for algorithms
     double cellSize = 1.0;
-
-    // PMF parameters
-    bool pmfExponential = true;
-    double pmfInitialDistance = 0.15;
-    double pmfMaxDistance = 2.5;
-    double pmfMaxWindowSize = 33.0;
-    double pmfSlope = 1.0;
-
-    // SMRF parameters
-    double smrfScalar = 1.25;
-    double smrfSlope = 0.15;
-    double smrfThreshold = 0.5;
-    double smrfWindowSize = 18.0;
+    double scalar = 1.25;
+    double slope = 0.15;
+    double threshold = 0.5;
+    double windowSize = 18.0;
 
     // args - initialized in addArgs()
     pdal::Arg* argOutput = nullptr;
     pdal::Arg* argOutputFormat = nullptr;
-    pdal::Arg* argAlgorithm = nullptr;
     pdal::Arg* argCellSize = nullptr;
 
-    // args - PMF
-    pdal::Arg* argPmfExponential = nullptr;
-    pdal::Arg* argPmfInitialDistance = nullptr;
-    pdal::Arg* argPmfMaxDistance = nullptr;
-    pdal::Arg* argPmfMaxWindowSize = nullptr;
-    pdal::Arg* argPmfSlope = nullptr; 
-
-    // args - SMRF
-    pdal::Arg* argSmrfScalar = nullptr;
-    pdal::Arg* argSmrfSlope = nullptr;
-    pdal::Arg* argSmrfThreshold = nullptr;
-    pdal::Arg* argSmrfWindowSize = nullptr;
+    pdal::Arg* argScalar = nullptr;
+    pdal::Arg* argSlope = nullptr;
+    pdal::Arg* argThreshold = nullptr;
+    pdal::Arg* argWindowSize = nullptr;
 
     std::vector<std::string> tileOutputFiles;
 

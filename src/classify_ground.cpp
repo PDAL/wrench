@@ -37,21 +37,11 @@ void ClassifyGround::addArgs()
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
     argOutputFormat = &programArgs.add("output-format", "Output format (las/laz/copc)", outputFormat);
     
-    argAlgorithm = &programArgs.add("algorithm", "Ground Classification algorithm to use: smrf (Simple Morphological Filter) or pmf (Progressive Morphological Filter).", algorithm, "smrf");
     argCellSize = &programArgs.add("cell-size", "Cell size.", cellSize, 1.0);
-
-    // PMF args
-    argPmfExponential = &programArgs.add("pmf-exponential", "Use exponential growth for PMF window sizes?.", pmfExponential, true);
-    argPmfInitialDistance = &programArgs.add("pmf-initial-distance", "Initial distance for PMF.", pmfInitialDistance, 0.15);
-    argPmfMaxDistance = &programArgs.add("pmf-max-distance", "Maximum distance for PMF.", pmfMaxDistance, 2.5);
-    argPmfMaxWindowSize = &programArgs.add("pmf-max-window-size", "Maximum window size for PMF.", pmfMaxWindowSize, 33.0);
-    argPmfSlope = &programArgs.add("pmf-slope", "Slope for PMF.", pmfSlope, 1.0);
-
-    // SMRF args
-    argSmrfScalar = &programArgs.add("smrf-scalar", "Scalar for SMRF.", smrfScalar, 1.25);
-    argSmrfSlope = &programArgs.add("smrf-slope", "Slope for SMRF.", smrfSlope, 0.15);
-    argSmrfThreshold = &programArgs.add("smrf-threshold", "Threshold for SMRF.", smrfThreshold, 0.5);
-    argSmrfWindowSize = &programArgs.add("smrf-window-size", "Window size for SMRF.", smrfWindowSize, 18.0);
+    argScalar = &programArgs.add("scalar", "Scalar for SMRF.", scalar, 1.25);
+    argSlope = &programArgs.add("slope", "Slope for SMRF.", slope, 0.15);
+    argThreshold = &programArgs.add("threshold", "Threshold for SMRF.", threshold, 0.5);
+    argWindowSize = &programArgs.add("window-size", "Window size for SMRF.", windowSize, 18.0);
 }
 
 bool ClassifyGround::checkArgs()
@@ -73,35 +63,10 @@ bool ClassifyGround::checkArgs()
     else
         outputFormat = "las";  // uncompressed by default
 
-    if (!argAlgorithm->set())
-    {
-        std::cerr << "missing algorithm" << std::endl;
-        return false;
-    }
-    else
-    {
-        if (!(algorithm == "smrf" || algorithm == "pmf"))
-        {
-            std::cerr << "unknown algorithm: " << algorithm << std::endl;
-            return false;
-        }
-    }
-
-
-    if (algorithm == "pmf" && (argSmrfScalar->set() || argSmrfSlope->set() || argSmrfThreshold->set() || argSmrfWindowSize->set()))
-    {
-        std::cout << "smrf-* arguments are not supported with pmf algorithm" << std::endl;
-    }
-
-    if (algorithm == "smrf" && (argPmfExponential->set() || argPmfInitialDistance->set() || argPmfMaxDistance->set() || argPmfMaxWindowSize->set() || argPmfSlope->set()))
-    {
-        std::cout << "pmf-* arguments are not supported with smrf algorithm" << std::endl;
-    }
-
     return true;
 }
 
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::string algorithm, pdal::Options &filterOptions)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, pdal::Options &filterOptions)
 {
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
 
@@ -136,14 +101,7 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::str
         last = &manager->makeFilter( "filters.expression", *last, filter_opts);
     }
 
-    if (algorithm == "pmf")
-    {
-        last = &manager->makeFilter( "filters.pmf", *last, filterOptions);
-    }
-    else if (algorithm == "smrf")
-    {
-        last = &manager->makeFilter( "filters.smrf", *last, filterOptions);
-    }
+    last = &manager->makeFilter( "filters.smrf", *last, filterOptions);
 
     pdal::Options writer_opts;
     // let's use the same offset & scale & header & vlrs as the input
@@ -158,23 +116,12 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::str
 void ClassifyGround::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines)
 {   
     pdal::Options filterOptions;
-    if (algorithm == "pmf")
-    {
-        filterOptions.add(pdal::Option("cell_size", cellSize));
-        filterOptions.add(pdal::Option("exponential", pmfExponential));
-        filterOptions.add(pdal::Option("initial_distance", pmfInitialDistance));
-        filterOptions.add(pdal::Option("max_window_size", pmfMaxWindowSize));   
-        filterOptions.add(pdal::Option("max_distance", pmfMaxDistance));   
-        filterOptions.add(pdal::Option("slope", pmfSlope));
-    }
-    else if (algorithm == "smrf")
-    {
-        filterOptions.add(pdal::Option("cell", cellSize));
-        filterOptions.add(pdal::Option("scalar", smrfScalar));
-        filterOptions.add(pdal::Option("slope", smrfSlope));
-        filterOptions.add(pdal::Option("threshold", smrfThreshold));
-        filterOptions.add(pdal::Option("window", smrfWindowSize));
-    }
+    filterOptions.add(pdal::Option("cell", cellSize));
+    filterOptions.add(pdal::Option("scalar", scalar));
+    filterOptions.add(pdal::Option("slope", slope));
+    filterOptions.add(pdal::Option("threshold", threshold));
+    filterOptions.add(pdal::Option("window", windowSize));
+    
 
     if (ends_with(inputFile, ".vpc"))
     {
@@ -204,7 +151,7 @@ void ClassifyGround::preparePipelines(std::vector<std::unique_ptr<PipelineManage
 
             tileOutputFiles.push_back(tile.outputFilename);
 
-            pipelines.push_back(pipeline(&tile, algorithm, filterOptions));
+            pipelines.push_back(pipeline(&tile, filterOptions));
         }
     }
     else
@@ -213,7 +160,7 @@ void ClassifyGround::preparePipelines(std::vector<std::unique_ptr<PipelineManage
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
 
-        pipelines.push_back(pipeline(&tile, algorithm, filterOptions));
+        pipelines.push_back(pipeline(&tile, filterOptions));
     }
 }
 
