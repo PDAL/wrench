@@ -272,6 +272,8 @@ pdal::Stage &makeReader(pdal::PipelineManager *manager, const std::string &input
 
     pdal::Options reader_opts;
     
+    // for LAS/LAZ files if the version 1.2, the extra dimensions will not be read, 
+    // need to enable use_eb_vlr to read those dimensions
     if (!ends_with(inputFile, ".copc.laz") && (ends_with(inputFile, ".laz") || ends_with(inputFile, ".las")))
     {
         reader_opts.add(pdal::Option("use_eb_vlr", true));
