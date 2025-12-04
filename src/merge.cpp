@@ -116,8 +116,6 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile)
     for (Stage *s : last)
         writer->setInput(*s);
 
-    pdal::PipelineWriter::writePipeline(writer, "debug_merge_pipeline.json");
-
     return manager;
 }
 
