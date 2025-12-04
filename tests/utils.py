@@ -1,4 +1,5 @@
 import shutil
+import tempfile
 from pathlib import Path
 
 import pdal
@@ -16,7 +17,7 @@ def test_data_filepath(file_name: str) -> Path:
 
 def test_data_output_filepath(file_name: str, subfolder: str) -> Path:
     """Return path to file in data folder"""
-    folder = test_data_folder() / "output"
+    folder = Path(tempfile.gettempdir()) / "wrench-tests"
     if subfolder:
         folder = folder / subfolder
     folder.mkdir(parents=True, exist_ok=True)
