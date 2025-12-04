@@ -300,6 +300,8 @@ pdal::Stage &makeWriter(pdal::PipelineManager *manager, const std::string &outpu
 
     pdal::Stage &writer = *writerPtr;
 
+    // these are for writers.las and writers.copc to forward all dimensions
+    // if other writers are to be supported, this needs to be adjusted or make specific based on outputFile extension
     pdal::Options writer_opts;
     writer_opts.add(pdal::Option("forward", "all"));
     writer_opts.add(pdal::Option("extra_dims", "all"));
