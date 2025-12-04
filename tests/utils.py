@@ -16,7 +16,7 @@ def test_data_filepath(file_name: str) -> Path:
 
 
 def test_data_output_filepath(file_name: str, subfolder: str) -> Path:
-    """Return path to file in data folder"""
+    """Return path to file tests output folder in temp directory"""
     folder = Path(tempfile.gettempdir()) / "wrench-tests"
     if subfolder:
         folder = folder / subfolder
