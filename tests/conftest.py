@@ -32,6 +32,11 @@ def _prepare_data():
 
     assert number_points == 693895
 
+    non_classified_data = utils.test_data_filepath("stadium-utm-not-classified.copc.laz")
+
+    if not non_classified_data.exists():
+        utils.run_change_dim_value_pipeline(base_data, non_classified_data, "Classification", 0)
+
     files_for_vpc = []
     files_for_vpc_copc = []
 
@@ -206,3 +211,9 @@ def vpc_copc_file() -> str:
 def main_copc_file() -> str:
     "Return path to the main copc file"
     return utils.test_data_filepath("stadium-utm.copc.laz").as_posix()
+
+
+@pytest.fixture
+def main_copc_file_without_classification() -> str:
+    "Return path to the main copc file without classification"
+    return utils.test_data_filepath("stadium-utm-not-classified.copc.laz").as_posix()

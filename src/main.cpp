@@ -127,6 +127,11 @@ int main(int argc, char* argv[])
     {
       runTile(args);
     }
+    else if (cmd == "classify_ground")
+    {
+        ClassifyGround classifyGround;
+        runAlg(args, classifyGround);
+    }
     else
     {
         std::cerr << "unknown command: " << cmd << std::endl;

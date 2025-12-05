@@ -60,3 +60,24 @@ def run_hag_pipeline(input_file: Path, output_file: Path):
     count = pipeline.execute()
 
     assert count > 0
+   
+ 
+def run_change_dim_value_pipeline(input_file: Path, output_file: Path, dim_name: str, dim_value: float):
+    """
+    Run filter assign pipeline on input file and save to output file.
+    """
+    pipeline = pdal.Pipeline()
+
+    # Read input file
+    pipeline |= pdal.Reader(filename=input_file.as_posix())
+
+    # Apply assign filter
+    pipeline |= pdal.Filter.assign(value=[f"{dim_name} = {dim_value}"])
+
+    # Write output
+    pipeline |= pdal.Writer(filename=output_file.as_posix(), forward="all")
+
+    # Execute the pipeline
+    count = pipeline.execute()
+
+    assert count > 0
