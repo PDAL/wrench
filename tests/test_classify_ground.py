@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 
 import numpy as np
 import pdal
@@ -6,7 +7,9 @@ import pytest
 import utils
 
 
-def test_classify_ground(main_copc_file_without_classification: str):
+# test that has input file with all points set to never classified (0)
+# this checks even that the pipeline classifies points correctly
+def test_classify_ground_no_classification(main_copc_file_without_classification: str):
 
     output_path = utils.test_data_output_filepath(f"stadium-utm-classified-ground.copc.laz", "classify_ground")
 
@@ -34,3 +37,58 @@ def test_classify_ground(main_copc_file_without_classification: str):
 
     assert unique_values.size == 3
     assert unique_values.tolist() == [0, 1, 2]  # 1: non-ground, 2: ground, 0: never classified
+
+
+# these tests use various input files to test classify_ground
+@pytest.mark.parametrize(
+    "input_path,output_path,point_count",
+    [
+        (
+            utils.test_data_filepath("stadium-utm.laz"),
+            utils.test_data_output_filepath("classify-ground.las", "classify_ground"),
+            693895,
+        ),
+        (
+            utils.test_data_filepath("stadium-utm.laz"),
+            utils.test_data_output_filepath("classify-ground.copc.laz", "classify_ground"),
+            693895,
+        ),
+        (
+            utils.test_data_filepath("stadium-utm.copc.laz"),
+            utils.test_data_output_filepath("classify-ground.copc.laz", "classify_ground"),
+            693895,
+        ),
+        (
+            utils.test_data_filepath("data.vpc"),
+            utils.test_data_output_filepath("classify-ground-vpc.copc.laz", "classify_ground"),
+            338163,
+        ),
+        (
+            utils.test_data_filepath("data_copc.vpc"),
+            utils.test_data_output_filepath("classify-ground-vpc.copc.laz", "classify_ground"),
+            338163,
+        ),
+    ],
+)
+def test_classify_ground(input_path: Path, output_path: Path, point_count: int):
+
+    output_path = utils.test_data_output_filepath(f"stadium-utm-classified-ground.copc.laz", "classify_ground")
+
+    res = subprocess.run(
+        [
+            utils.pdal_wrench_path(),
+            "classify_ground",
+            f"--input={input_path.as_posix()}",
+            f"--output={output_path.as_posix()}",
+        ],
+        check=True,
+    )
+
+    assert res.returncode == 0
+
+    assert output_path.exists()
+
+    pipeline = pdal.Reader(filename=output_path.as_posix()).pipeline()
+    number_of_points = pipeline.execute()
+
+    assert number_of_points == point_count
