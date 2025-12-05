@@ -45,6 +45,7 @@ def _prepare_data():
         clip_gpkg_file = utils.test_data_filepath(f"rectangle{i}.gpkg")
         clipped_laz_file = utils.test_data_filepath(f"data_clipped{i}.laz")
         clipped_copc_file = utils.test_data_filepath(f"data_clipped{i}.copc.laz")
+        clipped_copc_file_hag = utils.test_data_filepath(f"data_hag_clipped{i}.las")
 
         files_for_vpc.append(clipped_laz_file)
         files_for_vpc_copc.append(clipped_copc_file)
@@ -100,6 +101,15 @@ def _prepare_data():
             number_points = clipped_copc.execute()
 
             assert number_points > 0
+
+        if not clipped_copc_file_hag.exists():
+
+            utils.run_hag_pipeline(
+                clipped_copc_file,
+                clipped_copc_file_hag,
+            )
+
+        assert clipped_copc_file_hag.exists()
 
     vpc_file = utils.test_data_filepath("data.vpc")
 
