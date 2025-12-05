@@ -127,6 +127,11 @@ int main(int argc, char* argv[])
     {
       runTile(args);
     }
+    else if (cmd == "filter_noise")
+    {
+        FilterNoise filterNoise;
+        runAlg(args, filterNoise);
+    }
     else
     {
         std::cerr << "unknown command: " << cmd << std::endl;
