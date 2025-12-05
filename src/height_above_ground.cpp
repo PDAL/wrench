@@ -182,9 +182,9 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::str
 
         last = &manager->makeFilter( "filters.ferry", *last, ferry_opts);
     }
-   
+
     makeWriter( manager.get(), tile->outputFilename, last);
-        
+
     return manager;
 }
 
