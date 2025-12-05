@@ -1,3 +1,4 @@
+import itertools
 import subprocess
 from pathlib import Path
 
@@ -5,45 +6,52 @@ import pdal
 import pytest
 import utils
 
+# Base test cases with input, output, and expected point count
+test_cases = [
+    (
+        utils.test_data_filepath("stadium-utm.laz"),
+        utils.test_data_output_filepath("stadium-utm.las", "height_above_ground"),
+        693895,
+    ),
+    (
+        utils.test_data_filepath("stadium-utm.laz"),
+        utils.test_data_output_filepath("stadium-utm.copc.laz", "height_above_ground"),
+        693895,
+    ),
+    (
+        utils.test_data_filepath("stadium-utm.copc.laz"),
+        utils.test_data_output_filepath("stadium-utm-copc-input.copc.laz", "height_above_ground"),
+        693895,
+    ),
+    (
+        utils.test_data_filepath("data.vpc"),
+        utils.test_data_output_filepath("stadium-utm-vpc.copc.laz", "height_above_ground"),
+        338163,
+    ),
+    (
+        utils.test_data_filepath("data_copc.vpc"),
+        utils.test_data_output_filepath("stadium-utm-vpc-copc.vpc", "height_above_ground"),
+        338163,
+    ),
+]
+
+# algorithms
+algorithms = ["nn", "delaunay"]
+
+# main setting of the height_above_ground
+replace_z_values = [True, False]
+
+# Create all combinations for tests
+parametrize_values = []
+for (input_path, output_path, point_count), algorithm, replace_z in itertools.product(
+    test_cases, algorithms, replace_z_values
+):
+    parametrize_values.append((input_path, output_path, point_count, replace_z, algorithm))
+
 
 @pytest.mark.parametrize(
     "input_path,output_path,point_count,replace_z,algorithm",
-    [
-        (
-            utils.test_data_filepath("stadium-utm.laz"),
-            utils.test_data_output_filepath("stadium-utm.las", "height_above_ground"),
-            693895,
-            True,
-            "nn",
-        ),
-        (
-            utils.test_data_filepath("stadium-utm.laz"),
-            utils.test_data_output_filepath("stadium-utm.copc.laz", "height_above_ground"),
-            693895,
-            False,
-            "nn",
-        ),
-        (
-            utils.test_data_filepath("stadium-utm.copc.laz"),
-            utils.test_data_output_filepath("stadium-utm-copc-input.copc.laz", "height_above_ground"),
-            693895,
-            False,
-            "nn",
-        ),
-        # (
-        #     utils.test_data_filepath("data.vpc"),
-        #     utils.test_data_output_filepath("stadium-utm-vpc.copc.laz", "height_above_ground"),
-        #     338163,
-        #     False,
-        # ),
-        (
-            utils.test_data_filepath("data_copc.vpc"),
-            utils.test_data_output_filepath("stadium-utm-vpc-copc.vpc", "height_above_ground"),
-            338163,
-            False,
-            "delaunay",
-        ),
-    ],
+    parametrize_values,
 )
 def test_height_above_ground_files(
     input_path: Path, output_path: Path, point_count: int, replace_z: bool, algorithm: str
