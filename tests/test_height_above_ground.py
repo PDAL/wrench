@@ -73,7 +73,11 @@ def test_height_above_ground_files(
 
     assert output_path.exists()
 
-    pipeline = pdal.Reader(filename=output_path.as_posix()).pipeline()
+    if not output_path.name.endswith(".copc.laz") and output_path.suffix.lower() in [".laz", ".las"]:
+        pipeline = pdal.Reader(filename=output_path.as_posix(), use_eb_vlr=True).pipeline()
+    else:
+        pipeline = pdal.Reader(filename=output_path.as_posix()).pipeline()
+
     number_of_points = pipeline.execute()
 
     dimensions = pipeline.arrays[0].dtype.names
