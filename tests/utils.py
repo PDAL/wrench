@@ -1,5 +1,8 @@
 import shutil
+import tempfile
 from pathlib import Path
+
+import pdal
 
 
 def test_data_folder() -> Path:
@@ -10,6 +13,15 @@ def test_data_folder() -> Path:
 def test_data_filepath(file_name: str) -> Path:
     """Return path to file in data folder"""
     return test_data_folder() / file_name
+
+
+def test_data_output_filepath(file_name: str, subfolder: str) -> Path:
+    """Return path to file tests output folder in temp directory"""
+    folder = Path(tempfile.gettempdir()) / "wrench-tests"
+    if subfolder:
+        folder = folder / subfolder
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder / file_name
 
 
 def pdal_wrench_path() -> str:
@@ -27,3 +39,24 @@ def pdal_wrench_path() -> str:
         raise FileNotFoundError(path_pdal_wrench)
 
     return path_pdal_wrench.as_posix()
+
+
+def run_hag_pipeline(input_file: Path, output_file: Path):
+    """
+    Run Height Above Ground pipeline on input file and save to output file.
+    """
+    pipeline = pdal.Pipeline()
+
+    # Read input file
+    pipeline |= pdal.Reader(filename=input_file.as_posix())
+
+    # Apply HAG filter
+    pipeline |= pdal.Filter.hag_nn()
+
+    # Write output with HeightAboveGround dimension
+    pipeline |= pdal.Writer(filename=output_file.as_posix(), extra_dims="HeightAboveGround=float32", forward="all")
+
+    # Execute the pipeline
+    count = pipeline.execute()
+
+    assert count > 0
