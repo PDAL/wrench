@@ -80,21 +80,6 @@ bool HeightAboveGround::checkArgs()
         }
     }
 
-    if (!argReplaceZWithHeightAboveGround->set())
-    {
-        replaceZWithHeightAboveGround = false; // default
-    }
-
-    if (!argNNCount->set())
-    {
-        nnCount = 1; // default
-    }
-
-    if (!argNNMaxDistance->set())
-    {
-        nnMaxDistance = 0; // default
-    }
-
     if (algorithm == "delaunay" && (argNNMaxDistance->set() || argNNCount->set()))
     {
         std::cout << "nn-* arguments are not supported with delaunay algorithm" << std::endl;
