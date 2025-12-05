@@ -83,10 +83,7 @@ def test_height_above_ground_files(
     dimensions = pipeline.arrays[0].dtype.names
 
     # check dimensions
-    if replace_z:
-        assert "HeightAboveGround" not in dimensions
-    else:
-        assert "HeightAboveGround" in dimensions
+    assert "HeightAboveGround" in dimensions
 
     # for non vpc files check values (vpc have different values)
     if input_path.suffix.lower() != ".vpc" and algorithm == "nn":
