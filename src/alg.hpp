@@ -341,7 +341,7 @@ struct HeightAboveGround : public Alg
     // parameters from the user
     std::string outputFile;
     std::string outputFormat;  // las / laz / copc / vpc
-    bool replaceZWithHeightAboveGround = false;
+    bool replaceZWithHeightAboveGround = true;
     std::string algorithm = "nn";
 
     // NN parameters

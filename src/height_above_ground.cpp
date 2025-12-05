@@ -37,7 +37,7 @@ void HeightAboveGround::addArgs()
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
     argOutputFormat = &programArgs.add("output-format", "Output format (las/laz/copc)", outputFormat);
     argAlgorithm = &programArgs.add("algorithm", "Height Above Ground algorithm to use: nn (Nearest Neighbor) or delaunay (Delaunay).", algorithm, "nn");
-    argReplaceZWithHeightAboveGround = &programArgs.add("replace-z", "Replace Z dimension with height above ground (true/false).", replaceZWithHeightAboveGround, false);
+    argReplaceZWithHeightAboveGround = &programArgs.add("replace-z", "Replace Z dimension with height above ground (true/false).", replaceZWithHeightAboveGround, true);
 
     // args - NN
     argNNCount = &programArgs.add("nn-count", "The number of ground neighbors to consider when determining the height above ground for a non-ground point", nnCount, 1);
