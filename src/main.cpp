@@ -123,6 +123,11 @@ int main(int argc, char* argv[])
         Translate translate;
         runAlg(args, translate);
     }
+    else if (cmd == "height_above_ground")
+    {
+        HeightAboveGround heightAboveGround;
+        runAlg(args, heightAboveGround);
+    }
     else if (cmd == "tile")
     {
       runTile(args);
