@@ -38,11 +38,11 @@ def test_classify_ground_no_classification(main_copc_file_without_classification
     assert unique_values.size == 3
     assert unique_values.tolist() == [0, 1, 2]  # 1: non-ground, 2: ground, 0: never classified
 
-    first_point_output = pipeline.arrays[0][0]
-
+    # test ground point
+    first_point_output = nonground_point_output = pipeline.arrays[0][
+        (pipeline.arrays[0]["X"] == 4494657.37) & (pipeline.arrays[0]["Y"] == 4878358.05)
+    ]
     assert first_point_output["Classification"] == 2  # ground
-    assert first_point_output["X"] == 494657.37
-    assert first_point_output["Y"] == 4878358.05
     assert first_point_output["Z"] == 130.15999999999997
 
     # test nonground point
@@ -50,8 +50,6 @@ def test_classify_ground_no_classification(main_copc_file_without_classification
         (pipeline.arrays[0]["X"] == 494650.04000000004) & (pipeline.arrays[0]["Y"] == 4878440.17)
     ]
     assert nonground_point_output["Classification"] == 1  # non-ground
-    assert nonground_point_output["X"] == 494650.04000000004
-    assert nonground_point_output["Y"] == 4878440.17
     assert nonground_point_output["Z"] == 140.09999999999997
 
 
