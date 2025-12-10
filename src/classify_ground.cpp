@@ -37,11 +37,11 @@ void ClassifyGround::addArgs()
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
     argOutputFormat = &programArgs.add("output-format", "Output format (las/laz/copc)", outputFormat);
     
-    argCellSize = &programArgs.add("cell-size", "Cell size.", cellSize, 1.0);
-    argScalar = &programArgs.add("scalar", "Scalar for SMRF.", scalar, 1.25);
-    argSlope = &programArgs.add("slope", "Slope for SMRF.", slope, 0.15);
-    argThreshold = &programArgs.add("threshold", "Threshold for SMRF.", threshold, 0.5);
-    argWindowSize = &programArgs.add("window-size", "Window size for SMRF.", windowSize, 18.0);
+    argCellSize = &programArgs.add("cell-size", "Sets the grid cell size in map units. Smaller values give finer detail but may increase noise.", cellSize, 1.0);
+    argScalar = &programArgs.add("scalar", "Increases the threshold on steeper slopes. Raise this for rough terrain.", scalar, 1.25);
+    argSlope = &programArgs.add("slope", "Controls how much terrain slope is tolerated as ground. Increase for steep terrain.", slope, 0.15);
+    argThreshold = &programArgs.add("threshold", " Elevation threshold for separating ground from objects. Higher values allow larger deviations from ground.", threshold, 0.5);
+    argWindowSize = &programArgs.add("window-size", "The maximum filter window size. Increase to better identify large buildings or objects, decrease to protect smaller features.", windowSize, 18.0);
 }
 
 bool ClassifyGround::checkArgs()
