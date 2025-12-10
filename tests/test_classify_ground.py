@@ -49,6 +49,7 @@ def test_classify_ground_no_classification(main_copc_file_without_classification
     nonground_point_output = pipeline.arrays[0][
         (pipeline.arrays[0]["X"] == 494650.04000000004) & (pipeline.arrays[0]["Y"] == 4878440.17)
     ]
+    print(nonground_point_output)
 
     assert nonground_point_output["Classification"] == 1  # non-ground
     assert nonground_point_output["X"] == 494650.04000000004
