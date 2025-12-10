@@ -117,6 +117,7 @@ struct Translate : public Alg
     std::string transformCrs;
     std::string transformCoordOp;
     std::string outputFormat;  // las / laz / copc
+    std::string transformMatrix; // 4x4 matrix as 16 space-separated values
 
     // args - initialized in addArgs()
     pdal::Arg* argOutput = nullptr;
