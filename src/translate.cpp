@@ -83,7 +83,7 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::str
     if (!assignCrs.empty())
         reader_opts.add(pdal::Option("override_srs", assignCrs));
 
-    Stage& r = makeReader( manager.get(), tile->inputFilenames[0], reader_opts);
+    Stage& r = makeReader(manager.get(), tile->inputFilenames[0], reader_opts);
 
     Stage *last = &r;
 

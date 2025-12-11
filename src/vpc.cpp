@@ -571,7 +571,7 @@ void buildVpc(std::vector<std::string> args)
         {
             std::unique_ptr<PipelineManager> manager( new PipelineManager );
 
-            Stage* last = &manager->makeReader(f.filename, "");
+            Stage* last = &makeReader(manager.get(), f.filename);
             if (boundaries)
             {
                 pdal::Options hexbin_opts;
@@ -598,9 +598,7 @@ void buildVpc(std::vector<std::string> args)
                 std::string overviewOutput = overviewFilenameBase + "-overview-tmp-" + std::to_string(++overviewCounter) + ".las";
                 overviewTempFiles.push_back(overviewOutput);
 
-                pdal::Options writer_opts;
-                writer_opts.add(pdal::Option("forward", "all"));  // TODO: maybe we could use lower scale than the original
-                manager->makeWriter(overviewOutput, "", *last, writer_opts);
+                makeWriter(manager.get(), overviewOutput, last);
               }
 
             pipelines.push_back(std::move(manager));
@@ -631,7 +629,7 @@ void buildVpc(std::vector<std::string> args)
 
             for (const std::string &overviewTempFile : overviewTempFiles)
             {
-                Stage& reader = manager->makeReader(overviewTempFile, "");
+                Stage& reader = makeReader(manager.get(), overviewTempFile);
                 merge.setInput(reader);
             }
 
