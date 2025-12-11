@@ -26,11 +26,14 @@ TODO:
 
 extern int runTile(std::vector<std::string> arglist);  // tile/tile.cpp
 
+std::string WRENCH_VERSION = "1.3.0";
 
 void printUsage()
 {
     std::cout << "usage: pdal_wrench <command> [<args>]" << std::endl;
     std::cout << "       pdal_wrench [--help]" << std::endl;
+    std::cout << "       pdal_wrench [--version]" << std::endl;
+    std::cout << "pdal_wrench version: " << WRENCH_VERSION << std::endl;
     std::cout << std::endl;
     std::cout << "Available commands:" << std::endl;
     std::cout << "   boundary               Exports a polygon file containing boundary" << std::endl;
@@ -71,6 +74,10 @@ int main(int argc, char* argv[])
     if (cmd == "--help" || cmd == "help")
     {
         printUsage();
+    }
+    else if (cmd == "--version" || cmd == "version")
+    {
+        std::cout << WRENCH_VERSION << std::endl;
     }
     else if (cmd == "density")
     {
