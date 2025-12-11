@@ -336,6 +336,40 @@ struct ToVector : public Alg
 };
 
 
+struct ClassifyGround : public Alg
+{
+    ClassifyGround() { isStreaming = false; }
+
+    // parameters from the user
+    std::string outputFile;
+    std::string outputFormat;  // las / laz / copc
+
+    double cellSize = 1.0;
+    double scalar = 1.25;
+    double slope = 0.15;
+    double threshold = 0.5;
+    double windowSize = 18.0;
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argOutputFormat = nullptr;
+    pdal::Arg* argCellSize = nullptr;
+
+    pdal::Arg* argScalar = nullptr;
+    pdal::Arg* argSlope = nullptr;
+    pdal::Arg* argThreshold = nullptr;
+    pdal::Arg* argWindowSize = nullptr;
+    
+    std::vector<std::string> tileOutputFiles;
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};
+
+
 struct FilterNoise: public Alg
 {
 
