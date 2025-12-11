@@ -33,18 +33,21 @@ void printUsage()
     std::cout << "       pdal_wrench [--help]" << std::endl;
     std::cout << std::endl;
     std::cout << "Available commands:" << std::endl;
-    std::cout << "   boundary        Exports a polygon file containing boundary" << std::endl;
-    std::cout << "   build_vpc       Creates a virtual point cloud" << std::endl;
-    std::cout << "   clip            Outputs only points that are inside of the clipping polygons" << std::endl;
-    std::cout << "   density         Exports a raster where each cell contains number of points" << std::endl;
-    std::cout << "   info            Prints basic metadata from the point cloud file" << std::endl;
-    std::cout << "   merge           Merges multiple point cloud files to a single one" << std::endl;
-    std::cout << "   thin            Creates a thinned version of the point cloud (with fewer points)" << std::endl;
-    std::cout << "   tile            Creates square tiles from input data" << std::endl;
-    std::cout << "   to_raster       Exports point cloud data to a 2D raster grid" << std::endl;
-    std::cout << "   to_raster_tin   Exports point cloud data to a 2D raster grid using triangulation" << std::endl;
-    std::cout << "   to_vector       Exports point cloud data to a vector layer with 3D points" << std::endl;
-    std::cout << "   translate       Converts to a different file format, reproject, and more" << std::endl;
+    std::cout << "   boundary               Exports a polygon file containing boundary" << std::endl;
+    std::cout << "   build_vpc              Creates a virtual point cloud" << std::endl;
+    std::cout << "   classify_ground        Classify ground points" << std::endl;
+    std::cout << "   clip                   Outputs only points that are inside of the clipping polygons" << std::endl;
+    std::cout << "   density                Exports a raster where each cell contains number of points" << std::endl;
+    std::cout << "   filter_noise           Classify noise points" << std::endl;
+    std::cout << "   height_above_ground    Calculates height above ground for each point" << std::endl;
+    std::cout << "   info                   Prints basic metadata from the point cloud file" << std::endl;
+    std::cout << "   merge                  Merges multiple point cloud files to a single one" << std::endl;
+    std::cout << "   thin                   Creates a thinned version of the point cloud (with fewer points)" << std::endl;
+    std::cout << "   tile                   Creates square tiles from input data" << std::endl;
+    std::cout << "   to_raster              Exports point cloud data to a 2D raster grid" << std::endl;
+    std::cout << "   to_raster_tin          Exports point cloud data to a 2D raster grid using triangulation" << std::endl;
+    std::cout << "   to_vector              Exports point cloud data to a vector layer with 3D points" << std::endl;
+    std::cout << "   translate              Converts to a different file format, reproject, and more" << std::endl;
 }
 
 
