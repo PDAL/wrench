@@ -132,6 +132,11 @@ int main(int argc, char* argv[])
     {
       runTile(args);
     }
+    else if (cmd == "filter_noise")
+    {
+        FilterNoise filterNoise;
+        runAlg(args, filterNoise);
+    }
     else if (cmd == "classify_ground")
     {
         ClassifyGround classifyGround;

@@ -369,6 +369,44 @@ struct ClassifyGround : public Alg
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 };
 
+
+struct FilterNoise: public Alg
+{
+
+    FilterNoise() { isStreaming = false; }
+
+    std::vector<std::string> tileOutputFiles;
+    
+    // parameters from the user
+    std::string outputFile;
+    std::string outputFormat;  // las / laz / copc
+    std::string algorithm = "statistical"; // "statistical" or "radius"
+
+    // radius params
+    double radiusMinK = 2;
+    double radiusRadius = 1.0;
+
+    // statistical params
+    int statisticalMeanK = 8;
+    double statisticalMultiplier = 2.0;
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argOutputFormat = nullptr;
+    pdal::Arg* argAlgorithm = nullptr;
+    pdal::Arg* argRadiusMinK = nullptr;
+    pdal::Arg* argRadiusRadius = nullptr;
+    pdal::Arg* argStatisticalMeanK = nullptr;
+    pdal::Arg* argStatisticalMultiplier = nullptr;
+    
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};
+
+
 struct HeightAboveGround : public Alg
 {   
     HeightAboveGround() { isStreaming = false; }
