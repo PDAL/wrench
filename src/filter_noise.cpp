@@ -37,7 +37,8 @@ void FilterNoise::addArgs()
     argOutputFormat = &programArgs.add("output-format", "Output format (las/laz/copc)", outputFormat);
     
     argAlgorithm = &programArgs.add("algorithm", "Noise filtering algorithm to use: statistical or radius.", algorithm, "statistical");
-    
+    argRemoveNoisePoints = &programArgs.add("remove-noise-points", "Remove noise points from the output.", removeNoisePoints, false);
+
     // radius args
     argRadiusMinK = &programArgs.add("radius-min-k", "Minimum number of neighbors in radius (radius algorithm only).", radiusMinK, 2.0);
     argRadiusRadius = &programArgs.add("radius-radius", "Radius (radius method only).", radiusRadius, 1.0);
@@ -96,7 +97,7 @@ bool FilterNoise::checkArgs()
 }
 
 
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, pdal::Options &noiseFilterOptions)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, pdal::Options &noiseFilterOptions, bool removeNoisePoints)
 {
     std::unique_ptr<PipelineManager> manager( new PipelineManager );
 
@@ -130,6 +131,13 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, pdal::Op
     }
 
     last = &manager->makeFilter("filters.outlier", *last, noiseFilterOptions);
+
+    if (removeNoisePoints)
+    {
+        Options filter_opts;
+        filter_opts.add(pdal::Option("expression", "Classification != 7"));
+        last = &manager->makeFilter( "filters.expression", *last, filter_opts);
+    }
  
     makeWriter(manager.get(), tile->outputFilename, last);
 
@@ -180,7 +188,7 @@ void FilterNoise::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>
 
             tileOutputFiles.push_back(tile.outputFilename);
 
-            pipelines.push_back(pipeline(&tile, noiseFilterOptions));
+            pipelines.push_back(pipeline(&tile, noiseFilterOptions, removeNoisePoints));
         }
     }
     else
@@ -189,7 +197,7 @@ void FilterNoise::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
 
-        pipelines.push_back(pipeline(&tile, noiseFilterOptions));
+        pipelines.push_back(pipeline(&tile, noiseFilterOptions, removeNoisePoints));
     }
 }
 

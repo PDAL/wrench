@@ -381,6 +381,7 @@ struct FilterNoise: public Alg
     std::string outputFile;
     std::string outputFormat;  // las / laz / copc
     std::string algorithm = "statistical"; // "statistical" or "radius"
+    bool removeNoisePoints = false;
 
     // radius params
     double radiusMinK = 2;
@@ -394,6 +395,7 @@ struct FilterNoise: public Alg
     pdal::Arg* argOutput = nullptr;
     pdal::Arg* argOutputFormat = nullptr;
     pdal::Arg* argAlgorithm = nullptr;
+    pdal::Arg* argRemoveNoisePoints = nullptr;
     pdal::Arg* argRadiusMinK = nullptr;
     pdal::Arg* argRadiusRadius = nullptr;
     pdal::Arg* argStatisticalMeanK = nullptr;
