@@ -3,8 +3,9 @@
 
 A collection of easy to use command line tools for processing of point cloud data:
 
-- basic management of data (info, translate, merge, tile, thin, clip, boundary, density, to_vector)
+- basic management of data (info, translate, merge, tile, thin, clip, boundary, density, to_vector, height_above_ground)
 - export of raster grids (to_raster, to_raster_tin)
+- classification (filter_noise, classify_ground)
 - handle [virtual point clouds](vpc-spec.md) (build_vpc)
 
 And more algorithms will be added in the future!
@@ -267,3 +268,6 @@ When algorithms create derived VPCs, by default they use uncompressed LAS, but `
 | to_raster_tin | multi-threaded | spatial tiling |
 | to_vector | multi-threaded | per file |
 | translate | multi-threaded | per file |
+| height_above_ground | multi-threaded | per file |
+| filter_noise | multi-threaded | per file |
+| classify_ground | multi-threaded | per file |
