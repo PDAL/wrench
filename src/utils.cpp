@@ -122,14 +122,29 @@ void runPipelineParallel(point_count_t totalPoints, bool isStreaming, std::vecto
             p.add([pipeline]() {
 
                 MyTable table(CHUNK_SIZE);
-                pipeline->executeStream(table);
-
+                try
+                {
+                    pipeline->executeStream(table);
+                }
+                catch ( pdal::pdal_error& e )
+                {
+                    std::cerr << "Error in wrench execution: " << e.what() << std::endl;
+                    std::exit(EXIT_FAILURE);
+                }
             });
         }
         else
         {
             p.add([pipeline, &pipelines, i]() {
-                pipeline->execute();
+                try
+                {
+                    pipeline->execute();
+                }
+                catch ( pdal::pdal_error& e )
+                {
+                    std::cerr << "Error in wrench execution: " << e.what() << std::endl;
+                    std::exit(EXIT_FAILURE);
+                }
                 pipelines[i].reset();  // to free the point table and views (meshes, rasters)
                 sProgressBar.add();
             });
