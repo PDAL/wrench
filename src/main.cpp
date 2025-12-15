@@ -36,7 +36,6 @@ void printUsage()
     std::cout << "usage: pdal_wrench <command> [<args>]" << std::endl;
     std::cout << "       pdal_wrench [--help]" << std::endl;
     std::cout << "       pdal_wrench [--version]" << std::endl;
-    std::cout << "pdal_wrench version: " << WRENCH_VERSION << " (PDAL version: " << pdal::Config::versionString() << ", GDAL version: "<<  GDAL_RELEASE_NAME << ")"  << std::endl;
     std::cout << std::endl;
     std::cout << "Available commands:" << std::endl;
     std::cout << "   boundary               Exports a polygon file containing boundary" << std::endl;
@@ -80,7 +79,7 @@ int main(int argc, char* argv[])
     }
     else if (cmd == "--version" || cmd == "version")
     {
-        std::cout << WRENCH_VERSION << std::endl;
+        std::cout << "pdal_wrench version: " << WRENCH_VERSION << " (PDAL version: " << pdal::Config::versionString() << ", GDAL version: "<<  GDAL_RELEASE_NAME << ")"  << std::endl;
     }
     else if (cmd == "density")
     {
