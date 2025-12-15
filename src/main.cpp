@@ -20,6 +20,9 @@ TODO:
 #include <vector>
 
 #include <pdal/util/FileUtils.hpp>
+#include <pdal/pdal_config.hpp>
+
+#include "gdal_version.h"
 
 #include "alg.hpp"
 #include "vpc.hpp"
@@ -33,7 +36,7 @@ void printUsage()
     std::cout << "usage: pdal_wrench <command> [<args>]" << std::endl;
     std::cout << "       pdal_wrench [--help]" << std::endl;
     std::cout << "       pdal_wrench [--version]" << std::endl;
-    std::cout << "pdal_wrench version: " << WRENCH_VERSION << std::endl;
+    std::cout << "pdal_wrench version: " << WRENCH_VERSION << " (PDAL version: " << pdal::Config::versionString() << ", GDAL version: "<<  GDAL_RELEASE_NAME << ")"  << std::endl;
     std::cout << std::endl;
     std::cout << "Available commands:" << std::endl;
     std::cout << "   boundary               Exports a polygon file containing boundary" << std::endl;
