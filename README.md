@@ -80,6 +80,12 @@ Assign coordinate reference system (if not present or wrong):
 pdal_wrench translate --input=data-with-invalid-crs.las --output=data.las --assign-crs=EPSG:3857
 ```
 
+Transform data using a 4x4 transformation matrix:
+
+```
+pdal_wrench translate --input=data.las --output=data.las --transform-matrix="1 0 0 100 0 1 0 200 0 0 1 300 0 0 0 1"
+```
+
 
 ## boundary
 
@@ -177,6 +183,38 @@ Exports point cloud data to a vector layer with 3D points (a GeoPackage), option
 
 ```
 pdal_wrench to_vector --output=data.gpkg --input=data.las
+```
+
+## classify_ground
+
+Classify points as ground/non-ground using Simple Morphological Filter (SMRF).
+
+```
+pdal_wrench classify_ground --input=data.las --output=data_classified.las --cell-size=1 --scalar=1.25 --slope=0.15 --threshold=0.5 --window-size=18
+```
+
+## filter_noise
+
+Classify points as noise/non-noise using either statistical or radius method.
+
+```
+pdal_wrench filter_noise --input=data.las --output=data_classified.las --algorithm=radius --radius-min-k=2 --radius-radius=1.0
+```
+
+```
+pdal_wrench filter_noise --input=data.las --output=data_classified.las --algorithm=statistical --statistical-mean-k=8 --statistical-multiplier=2.0
+```
+
+## height_above_ground
+
+Calculates height above ground either using Nearest Neighbor or Delaunay method. The algorithm adds HeightAboveGround dimension to the point cloud and can optionally replace Z values with height above ground.
+
+```
+pdal_wrench height_above_ground --input=data.las --output=data_hag.las --algorithm=nn --replace-z=false --nn-count=1 --nn-max-distance=0.0
+```
+
+```
+pdal_wrench height_above_ground --input=data.las --output=data_hag.las --algorithm=delaunay --replace-z=true --delaunay-count=10
 ```
 
 # Virtual Point Clouds (VPC)
