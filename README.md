@@ -201,7 +201,7 @@ pdal_wrench filter_noise --input=data.las --output=data_classified.las --algorit
 
 ## height_above_ground
 
-Calculates heigh above ground either using Nearest Neighbor or Delaunay method. The algorithm adds HeightAboveGround dimension to the point cloud and can optionally replace Z values with height above ground.
+Calculates height above ground either using Nearest Neighbor or Delaunay method. The algorithm adds HeightAboveGround dimension to the point cloud and can optionally replace Z values with height above ground.
 
 ```
 pdal_wrench height_above_ground --input=data.las --output=data_hag.las --algorithm=nn --replace-z=false --nn-count=1 --nn-max-distance=0.0
