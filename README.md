@@ -80,6 +80,12 @@ Assign coordinate reference system (if not present or wrong):
 pdal_wrench translate --input=data-with-invalid-crs.las --output=data.las --assign-crs=EPSG:3857
 ```
 
+Transform data using a 4x4 transformation matrix:
+
+```
+pdal_wrench translate --input=data.las --output=data.las --transform-matrix="1 0 0 100 0 1 0 200 0 0 1 300 0 0 0 1"
+```
+
 
 ## boundary
 
