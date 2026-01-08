@@ -359,6 +359,8 @@ void buildOutput(std::string outputFile, std::vector<std::string> &tileOutputFil
 
 std::string tileOutputFileName(const std::string &outputFile, const std::string &outputFormat, const fs::path &outputSubdir, const std::string &tileFilename)
 {
+    assert(outputFormat == "las" || outputFormat == "laz" || outputFormat == "copc");
+
     const fs::path inputBasename = fileStem(tileFilename);
 
     // construct full output file name for the tile without extension
