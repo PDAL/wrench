@@ -35,7 +35,7 @@ namespace fs = std::filesystem;
 void HeightAboveGround::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
-    argOutputFormatVpc = &programArgs.add("vcp-output-format", "Output format (las/laz/copc)", outputFormatVpc);
+    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc, "copc");
     argAlgorithm = &programArgs.add("algorithm", "Height Above Ground algorithm to use: nn (Nearest Neighbor) or delaunay (Delaunay).", algorithm, "nn");
     argReplaceZWithHeightAboveGround = &programArgs.add("replace-z", "Replace Z dimension with height above ground (true/false).", replaceZWithHeightAboveGround, true);
 
@@ -63,8 +63,6 @@ bool HeightAboveGround::checkArgs()
             return false;
         }
     }
-    else
-        outputFormatVpc = "las";  // uncompressed by default
 
     if (!argAlgorithm->set())
     {

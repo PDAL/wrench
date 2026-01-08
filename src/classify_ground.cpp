@@ -35,7 +35,7 @@ namespace fs = std::filesystem;
 void ClassifyGround::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
-    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc);
+    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc, "copc");
     
     argCellSize = &programArgs.add("cell-size", "Sets the grid cell size in map units. Smaller values give finer detail but may increase noise.", cellSize, 1.0);
     argScalar = &programArgs.add("scalar", "Increases the threshold on steeper slopes. Raise this for rough terrain.", scalar, 1.25);
@@ -60,9 +60,7 @@ bool ClassifyGround::checkArgs()
             return false;
         }
     }
-    else
-        outputFormatVpc = "las";  // uncompressed by default
-
+    
     return true;
 }
 

@@ -34,7 +34,7 @@ namespace fs = std::filesystem;
 void Translate::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
-    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc);
+    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc, "copc");
     programArgs.add("assign-crs", "Assigns CRS to data (no reprojection)", assignCrs);
     programArgs.add("transform-crs", "Transforms (reprojects) data to another CRS", transformCrs);
     programArgs.add("transform-coord-op", "Details on how to do the transform of coordinates when --transform-crs is used. "
@@ -62,8 +62,6 @@ bool Translate::checkArgs()
             return false;
         }
     }
-    else
-        outputFormatVpc = "las";  // uncompressed by default
 
     if (!transformCoordOp.empty() && transformCrs.empty())
     {

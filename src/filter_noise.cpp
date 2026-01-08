@@ -34,7 +34,7 @@ namespace fs = std::filesystem;
 void FilterNoise::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
-    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc);
+    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc, "copc");
     
     argAlgorithm = &programArgs.add("algorithm", "Noise filtering algorithm to use: statistical or radius.", algorithm, "statistical");
     argRemoveNoisePoints = &programArgs.add("remove-noise-points", "Remove noise points from the output.", removeNoisePoints, false);
@@ -64,8 +64,6 @@ bool FilterNoise::checkArgs()
             return false;
         }
     }
-    else
-        outputFormatVpc = "las";  // uncompressed by default
 
     if (!argAlgorithm->set())
     {

@@ -37,7 +37,7 @@ namespace fs = std::filesystem;
 void Thin::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
-    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc);
+    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc, "copc");
     argMode = &programArgs.add("mode", " 'every-nth' or 'sample' - either to keep every N-th point or to keep points based on their distance", mode);
     argStepEveryN = &programArgs.add("step-every-nth", "Keep every N-th point", stepEveryN);
     argStepSample = &programArgs.add("step-sample", "Minimum spacing between points", stepSample);
@@ -86,8 +86,6 @@ bool Thin::checkArgs()
             return false;
         }
     }
-    else
-        outputFormatVpc = "las";  // uncompressed by default
 
     return true;
 }

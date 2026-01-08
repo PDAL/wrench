@@ -34,7 +34,7 @@ namespace fs = std::filesystem;
 void Clip::addArgs()
 {
     argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
-    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc);
+    argOutputFormatVpc = &programArgs.add("vpc-output-format", "Output format (las/laz/copc)", outputFormatVpc, "copc");
     argPolygon = &programArgs.add("polygon,p", "Input polygon vector file", polygonFile);
 }
 
@@ -59,8 +59,6 @@ bool Clip::checkArgs()
             return false;
         }
     }
-    else
-        outputFormatVpc = "las";  // uncompressed by default
 
     return true;
 }
