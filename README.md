@@ -251,7 +251,7 @@ This will create a grid for each data file separately in parallel and then merge
 pdal_wrench density --input=hello.vpc --resolution=1 --output=density.tif
 ```
 
-When algorithms create derived VPCs, by default they use uncompressed LAS, but `--output-format=laz` option can switch to compressed LAZ.
+When algorithms create derived VPCs, by default they use COPC, but argument `--vpc-output-format=las` can be used to switch to LAS, LAZ or COPC.
 
 ## VPC support in algorithms
 
