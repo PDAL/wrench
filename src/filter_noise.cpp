@@ -65,6 +65,11 @@ bool FilterNoise::checkArgs()
         }
     }
 
+    if ( ends_with(outputFile, ".vpc") && outputFormatVpc == "copc" )
+    {
+        isStreaming = false;
+    }
+
     if (!argAlgorithm->set())
     {
         std::cerr << "missing algorithm" << std::endl;

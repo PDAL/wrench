@@ -61,6 +61,11 @@ bool ClassifyGround::checkArgs()
         }
     }
     
+    if ( ends_with(outputFile, ".vpc") && outputFormatVpc == "copc" )
+    {
+        isStreaming = false;
+    }
+    
     return true;
 }
 

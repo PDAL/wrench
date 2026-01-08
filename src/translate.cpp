@@ -63,6 +63,11 @@ bool Translate::checkArgs()
         }
     }
 
+    if ( ends_with(outputFile, ".vpc") && outputFormatVpc == "copc" )
+    {
+        isStreaming = false;
+    }
+
     if (!transformCoordOp.empty() && transformCrs.empty())
     {
         std::cerr << "Need to specify also --transform-crs when --transform-coord-op is used." << std::endl;
