@@ -359,7 +359,7 @@ void buildOutput(std::string outputFile, std::vector<std::string> &tileOutputFil
 
 std::string tileOutputFileName(const std::string &outputFile, const std::string &outputFormat, const fs::path &outputSubdir, const std::string &tileFilename)
 {
-    const fs::path &inputBasename = fileStem(tileFilename);
+    const fs::path inputBasename = fileStem(tileFilename);
 
     // construct full output file name for the tile without extension
     const std::string fullFileNameWithoutExt = (outputSubdir / inputBasename).string();
