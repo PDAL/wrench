@@ -114,8 +114,6 @@ pipeline(ParallelJobInfo *tile, std::string compareFile, double normalRadius,
 
   Stage &writer = makeWriter(manager.get(), tile->outputFilename, filterM3c2);
 
-  pdal::PipelineWriter::writePipeline(&writer, "debug_compare_pipeline.json");
-
   return manager;
 }
 
