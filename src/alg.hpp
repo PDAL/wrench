@@ -450,7 +450,7 @@ struct HeightAboveGround : public Alg
 
 struct ComparePointClouds : public Alg
 {   
-    ComparePointClouds();
+    ComparePointClouds() { isStreaming = false; }
 
     // parameters from the user
     std::string outputFile;

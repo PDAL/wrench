@@ -57,11 +57,6 @@ bool ComparePointClouds::checkArgs() {
     return false;
   }
 
-  if (ends_with(outputFile, ".copc.laz"))
-  {
-    isStreaming = false;
-  }
-
   if (!argComparedInputFile->set()) {
     std::cerr << "missing compared input file" << std::endl;
     return false;
