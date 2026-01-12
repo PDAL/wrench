@@ -5,7 +5,7 @@ import pytest
 import utils
 
 
-@pytest.mark.skipif(pdal.info.major <= 2 and pdal.info.minor < 10, "Requires PDAL version 2.10 or higher")
+@pytest.mark.skipif(pdal.info.major <= 2 and pdal.info.minor < 10, reason="Requires PDAL version 2.10 or higher")
 def test_compare(autzen_2010_file: str, autzen_2023_file: str):
     """Test compare function"""
 
