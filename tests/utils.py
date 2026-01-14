@@ -34,7 +34,7 @@ def pdal_wrench_path() -> str:
         return executable_name
 
     # try to look in build directory
-    path_pdal_wrench = Path(__file__).parent.parent / "build_local_PDAL" / executable_name
+    path_pdal_wrench = Path(__file__).parent.parent / "build" / executable_name
 
     if not path_pdal_wrench.exists():
         raise FileNotFoundError(path_pdal_wrench)
