@@ -1,5 +1,5 @@
 /*****************************************************************************
- *   Copyright (c) 2025, Lutra Consulting Ltd. and Hobu, Inc.                *
+ *   Copyright (c) 2026, Lutra Consulting Ltd. and Hobu, Inc.                *
  *                                                                           *
  *   All rights reserved.                                                    *
  *                                                                           *
@@ -162,6 +162,8 @@ pipeline(ParallelJobInfo *tile, std::string compareFile, double stepSample, doub
   filterM3c2->setInput(*corePoints);
   
   Stage &writer = makeWriter(manager.get(), tile->outputFilename, filterM3c2);
+
+  pdal::PipelineWriter::writePipeline(&writer, "debug_compare_pipeline.json");
 
   return manager;
 }
