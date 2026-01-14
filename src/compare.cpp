@@ -84,27 +84,83 @@ static std::unique_ptr<PipelineManager>
 pipeline(ParallelJobInfo *tile, std::string compareFile, double stepSample, double normalRadius, double cylRadius, double cylHalflen, double regError, std::string cylOrientation) {
   std::unique_ptr<PipelineManager> manager(new PipelineManager);
 
-  std::vector<Stage *> readers;
   Stage &reader1 = makeReader(manager.get(), tile->inputFilenames[0]);
-  readers.push_back(&reader1);
-  Stage &reader2 = makeReader(manager.get(), compareFile);
-  readers.push_back(&reader2);
+  Stage *last = &reader1;
 
-  std::vector<Stage *> last = readers;
+  // filtering
+  if (!tile->filterBounds.empty())
+  {
+      Options filter_opts;
+      filter_opts.add(pdal::Option("bounds", tile->filterBounds));
+
+      if (readerSupportsBounds(reader1))
+      {
+          // Reader of the format can do the filtering - use that whenever possible!
+          reader1.addOptions(filter_opts);
+      }
+      else
+      {
+          // Reader can't do the filtering - do it with a filter
+          last = &manager->makeFilter("filters.crop", *last, filter_opts);
+      }
+  }
+
+  if (!tile->filterExpression.empty())
+  {
+      Options filter_opts;
+      filter_opts.add(pdal::Option("expression", tile->filterExpression));
+      last = &manager->makeFilter("filters.expression", *last, filter_opts);
+  }     
+  
+  Stage *reader1FilteredCropped = last;
+
+  Stage &reader2 = makeReader(manager.get(), compareFile);
+  last = &reader2;
+
+  // filtering
+  if (!tile->filterBounds.empty())
+  {
+      Options filter_opts;
+      filter_opts.add(pdal::Option("bounds", tile->filterBounds));
+
+      if (readerSupportsBounds(reader2))
+      {
+          // Reader of the format can do the filtering - use that whenever possible!
+          reader2.addOptions(filter_opts);
+      }
+      else
+      {
+          // Reader can't do the filtering - do it with a filter
+          last = &manager->makeFilter("filters.crop", *last, filter_opts);
+      }
+  }
+
+  if (!tile->filterExpression.empty())
+  {
+      Options filter_opts;
+      filter_opts.add(pdal::Option("expression", tile->filterExpression));
+      last = &manager->makeFilter("filters.expression", *last, filter_opts);
+  }
+  Stage *reader2FilteredCropped = last;
+
+  pdal::Options sample_opts;
+  sample_opts.add(pdal::Option("cell", stepSample));
+  Stage *corePoints = &manager->makeFilter("filters.sample", *reader1FilteredCropped, sample_opts);
 
   Options compare_opts;
   compare_opts.add(pdal::Option("normal_radius", normalRadius));
   compare_opts.add(pdal::Option("cyl_radius", cylRadius));
   compare_opts.add(pdal::Option("cyl_halflen", cylHalflen));
-  compare_opts.add(pdal::Option("sample_pct", samplePct));
   compare_opts.add(pdal::Option("reg_error", regError));
   compare_opts.add(pdal::Option("orientation", cylOrientation));
 
   Stage *filterM3c2 = &manager->makeFilter("filters.m3c2", compare_opts);
 
-  for (Stage *s : last)
-    filterM3c2->setInput(*s);
-
+  // inputs to M3C2 filter are origin file, compared file and core points (in order)
+  filterM3c2->setInput(*reader1FilteredCropped);
+  filterM3c2->setInput(*reader2FilteredCropped);
+  filterM3c2->setInput(*corePoints);
+  
   Stage &writer = makeWriter(manager.get(), tile->outputFilename, filterM3c2);
 
   return manager;
