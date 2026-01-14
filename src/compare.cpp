@@ -28,7 +28,8 @@
 
 using namespace pdal;
 
-void ComparePointClouds::addArgs() {
+void ComparePointClouds::addArgs() 
+{
   argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
   argComparedInputFile = &programArgs.add("input-compare", "Point cloud file to compare against input", comparedInputFile);
   
@@ -41,7 +42,8 @@ void ComparePointClouds::addArgs() {
   argOrientation = &programArgs.add( "cyl-orientation", "Which direction to orient the cylinder/normal vector used for comparison between the two point clouds. (up, origin, none)", cylOrientation, "up");
 }
 
-bool ComparePointClouds::checkArgs() {
+bool ComparePointClouds::checkArgs() 
+{
 
   if (ends_with(inputFile, ".vpc")) {
     std::cerr << "input cannot be a VPC file" << std::endl;
@@ -80,8 +82,8 @@ bool ComparePointClouds::checkArgs() {
   return true;
 }
 
-static std::unique_ptr<PipelineManager>
-pipeline(ParallelJobInfo *tile, std::string compareFile, double stepSample, double normalRadius, double cylRadius, double cylHalflen, double regError, std::string cylOrientation) {
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::string compareFile, double stepSample, double normalRadius, double cylRadius, double cylHalflen, double regError, std::string cylOrientation)
+{
   std::unique_ptr<PipelineManager> manager(new PipelineManager);
 
   Stage &reader1 = makeReader(manager.get(), tile->inputFilenames[0]);
@@ -168,8 +170,8 @@ pipeline(ParallelJobInfo *tile, std::string compareFile, double stepSample, doub
   return manager;
 }
 
-void ComparePointClouds::preparePipelines(
-    std::vector<std::unique_ptr<PipelineManager>> &pipelines) {
+void ComparePointClouds::preparePipelines(std::vector<std::unique_ptr<PipelineManager>> &pipelines)
+{
   ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression,
                        filterBounds);
   tile.inputFilenames.push_back(inputFile);
