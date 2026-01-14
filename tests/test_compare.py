@@ -18,7 +18,7 @@ def test_compare(autzen_2010_file: str, autzen_2023_file: str):
             f"--input={autzen_2010_file}",
             f"--input-compare={autzen_2023_file}",
             f"--output={output_path.as_posix()}",
-            "--sample-pct=100",
+            "--step-sample=2",
         ],
         check=True,
     )

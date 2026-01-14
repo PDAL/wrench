@@ -32,10 +32,11 @@ void ComparePointClouds::addArgs() {
   argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
   argComparedInputFile = &programArgs.add("input-compare", "Point cloud file to compare against input", comparedInputFile);
   
+  argStepSample = &programArgs.add("step-sample", "Minimum spacing between points", stepSample);
+
   argNormalRadius = &programArgs.add( "normal-radius", "Radius of the sphere around each core point that defines the neighbors from which normals are calculated.", normalRadius, 2.0);
   argCylRadius = &programArgs.add("cyl-radius", "Radius of the cylinder inside of which points are searched for when calculating change", cylRadius, 2.0);
   argCylHalflen = &programArgs.add("cyl-halflen", "The half-length of the cylinder of neighbors used for calculating change", cylHalflen, 5.0);
-  argSamplePct = &programArgs.add("sample-pct", "Sampling percentage for first point view.", samplePct, 10.0);
   argRegError = &programArgs.add("reg-error", "Registration error", regError, 0.0);
   argOrientation = &programArgs.add( "cyl-orientation", "Which direction to orient the cylinder/normal vector used for comparison between the two point clouds. (up, origin, none)", cylOrientation, "up");
 }
@@ -70,20 +71,17 @@ bool ComparePointClouds::checkArgs() {
     }
   }
 
-  if (argSamplePct->set()) {
-    if (samplePct <= 0.0 || samplePct > 100.0) {
-      std::cerr << "sample percentage must be in (0.0, 100.0]" << std::endl;
+  if (!argStepSample->set())
+  {
+      std::cerr << "missing step for sampling mode" << std::endl;
       return false;
-    }
   }
 
   return true;
 }
 
 static std::unique_ptr<PipelineManager>
-pipeline(ParallelJobInfo *tile, std::string compareFile, double normalRadius,
-         double cylRadius, double cylHalflen, double samplePct, double regError,
-         std::string cylOrientation) {
+pipeline(ParallelJobInfo *tile, std::string compareFile, double stepSample, double normalRadius, double cylRadius, double cylHalflen, double regError, std::string cylOrientation) {
   std::unique_ptr<PipelineManager> manager(new PipelineManager);
 
   std::vector<Stage *> readers;
@@ -118,9 +116,7 @@ void ComparePointClouds::preparePipelines(
                        filterBounds);
   tile.inputFilenames.push_back(inputFile);
   tile.outputFilename = outputFile;
-  pipelines.push_back(pipeline(&tile, comparedInputFile, normalRadius,
-                               cylRadius, cylHalflen, samplePct, regError,
-                               cylOrientation));
+  pipelines.push_back(pipeline(&tile, comparedInputFile, stepSample, normalRadius, cylRadius, cylHalflen, regError, cylOrientation));
 }
 
 void ComparePointClouds::finalize( std::vector<std::unique_ptr<PipelineManager>> &)

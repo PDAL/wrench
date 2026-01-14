@@ -456,10 +456,10 @@ struct ComparePointClouds : public Alg
     std::string outputFile;
 
     std::string comparedInputFile;
+    double stepSample;  // cell size for Poisson sampling
     double normalRadius = 2.0;
     double cylRadius = 2.0;
     double cylHalflen = 5.0;
-    double samplePct = 10.0;
     double regError = 0.0;
     std::string cylOrientation = "up";
 
@@ -467,10 +467,10 @@ struct ComparePointClouds : public Alg
     pdal::Arg* argOutput = nullptr;
     pdal::Arg* argOutputFormat = nullptr;
     pdal::Arg* argComparedInputFile = nullptr;
+    pdal::Arg* argStepSample = nullptr;
     pdal::Arg* argNormalRadius = nullptr;
     pdal::Arg* argCylRadius = nullptr;
     pdal::Arg* argCylHalflen = nullptr;
-    pdal::Arg* argSamplePct = nullptr;
     pdal::Arg* argRegError = nullptr;
     pdal::Arg* argOrientation = nullptr;
 
