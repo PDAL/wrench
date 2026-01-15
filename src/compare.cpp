@@ -33,7 +33,7 @@ void ComparePointClouds::addArgs()
   argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
   argComparedInputFile = &programArgs.add("input-compare", "Point cloud file to compare against input", comparedInputFile);
   
-  programArgs.add("subsampling-cell-size", "Minimum spacing between points", stepSample, 0.0);
+  programArgs.add("subsampling-cell-size", "Minimum spacing between points", subsamplingCellSize, 0.0);
 
   programArgs.add( "normal-radius", "Radius of the sphere around each core point that defines the neighbors from which normals are calculated.", normalRadius, 2.0);
   programArgs.add("cyl-radius", "Radius of the cylinder inside of which points are searched for when calculating change", cylRadius, 2.0);
@@ -76,7 +76,7 @@ bool ComparePointClouds::checkArgs()
   return true;
 }
 
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::string compareFile, double stepSample, double normalRadius, double cylRadius, double cylHalflen, double regError, std::string cylOrientation)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::string compareFile, double subsamplingCellSize, double normalRadius, double cylRadius, double cylHalflen, double regError, std::string cylOrientation)
 {
   std::unique_ptr<PipelineManager> manager(new PipelineManager);
 
@@ -168,7 +168,7 @@ void ComparePointClouds::preparePipelines(std::vector<std::unique_ptr<PipelineMa
                        filterBounds);
   tile.inputFilenames.push_back(inputFile);
   tile.outputFilename = outputFile;
-  pipelines.push_back(pipeline(&tile, comparedInputFile, stepSample, normalRadius, cylRadius, cylHalflen, regError, cylOrientation));
+  pipelines.push_back(pipeline(&tile, comparedInputFile, subsamplingCellSize, normalRadius, cylRadius, cylHalflen, regError, cylOrientation));
 }
 
 void ComparePointClouds::finalize( std::vector<std::unique_ptr<PipelineManager>> &)

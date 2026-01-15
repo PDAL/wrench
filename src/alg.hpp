@@ -456,7 +456,7 @@ struct ComparePointClouds : public Alg
     std::string outputFile;
 
     std::string comparedInputFile;
-    double stepSample;  // cell size for Poisson sampling
+    double subsamplingCellSize;  // cell size for Poisson sampling
     double normalRadius = 2.0;
     double cylRadius = 2.0;
     double cylHalflen = 5.0;
