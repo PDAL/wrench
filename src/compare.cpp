@@ -165,7 +165,7 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::str
   filterM3c2->setInput(*reader2FilteredCropped);
   filterM3c2->setInput(*corePoints);
   
-  Stage &writer = makeWriter(manager.get(), tile->outputFilename, filterM3c2);
+  makeWriter(manager.get(), tile->outputFilename, filterM3c2);
 
   return manager;
 }
