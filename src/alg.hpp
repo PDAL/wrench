@@ -447,3 +447,31 @@ struct HeightAboveGround : public Alg
     virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
     virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
 };
+
+struct ComparePointClouds : public Alg
+{   
+    ComparePointClouds() { isStreaming = false; }
+
+    // parameters from the user
+    std::string outputFile;
+
+    std::string comparedInputFile;
+    double subsamplingCellSize;  // cell size for Poisson sampling
+    double normalRadius = 2.0;
+    double cylRadius = 2.0;
+    double cylHalflen = 5.0;
+    double regError = 0.0;
+    std::string cylOrientation = "up";
+
+    // args - initialized in addArgs()
+    pdal::Arg* argOutput = nullptr;
+    pdal::Arg* argOutputFormat = nullptr;
+    pdal::Arg* argComparedInputFile = nullptr;
+    pdal::Arg* argOrientation = nullptr;
+
+    // impl
+    virtual void addArgs() override;
+    virtual bool checkArgs() override;
+    virtual void preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+    virtual void finalize(std::vector<std::unique_ptr<PipelineManager>>& pipelines) override;
+};

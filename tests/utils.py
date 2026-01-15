@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 
 import pdal
+import requests
 
 
 def test_data_folder() -> Path:
@@ -60,8 +61,8 @@ def run_hag_pipeline(input_file: Path, output_file: Path):
     count = pipeline.execute()
 
     assert count > 0
-   
- 
+
+
 def run_change_dim_value_pipeline(input_file: Path, output_file: Path, dim_name: str, dim_value: float):
     """
     Run filter assign pipeline on input file and save to output file.
@@ -81,3 +82,13 @@ def run_change_dim_value_pipeline(input_file: Path, output_file: Path, dim_name:
     count = pipeline.execute()
 
     assert count > 0
+
+
+def download_data(url: str, target_path: Path) -> None:
+    """Download data from url to target_path, if the file does not exist yet"""
+    if not target_path.exists():
+
+        r = requests.get(url, timeout=10 * 60)
+
+        with open(target_path, "wb") as f:
+            f.write(r.content)

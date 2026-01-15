@@ -17,15 +17,25 @@ def _prepare_data():
 
     base_data = utils.test_data_filepath("stadium-utm.laz")
 
-    if not base_data.exists():
-        # PDAL autzen stadium dataset
-        url = "https://media.githubusercontent.com/media/PDAL/data/refs/heads/main/autzen/stadium-utm.laz"
+    # PDAL autzen stadium dataset
+    utils.download_data(
+        "https://media.githubusercontent.com/media/PDAL/data/refs/heads/main/autzen/stadium-utm.laz", base_data
+    )
 
-        r = requests.get(url, timeout=10 * 60)
+    autzen_2010_data = utils.test_data_filepath("autzen-bmx-2010.las")
+    autzen_2023_data = utils.test_data_filepath("autzen-bmx-2023.las")
 
-        with open(base_data, "wb") as f:
-            f.write(r.content)
-            # Run the pdal_wrench command
+    utils.download_data(
+        "https://raw.githubusercontent.com/PDAL/PDAL/a057739ef0c620d4668752becef25f2b196bf174/test/data/autzen/autzen-bmx-2010.las",
+        autzen_2010_data,
+    )
+    utils.download_data(
+        "https://raw.githubusercontent.com/PDAL/PDAL/a057739ef0c620d4668752becef25f2b196bf174/test/data/autzen/autzen-bmx-2023.las",
+        autzen_2023_data,
+    )
+
+    pdal.Reader(autzen_2010_data.as_posix()).pipeline().execute()
+    pdal.Reader(autzen_2023_data.as_posix()).pipeline().execute()
 
     laz_file = pdal.Reader(base_data.as_posix()).pipeline()
     number_points = laz_file.execute()
@@ -217,3 +227,15 @@ def main_copc_file() -> str:
 def main_copc_file_without_classification() -> str:
     "Return path to the main copc file without classification"
     return utils.test_data_filepath("stadium-utm-not-classified.copc.laz").as_posix()
+
+
+@pytest.fixture
+def autzen_2010_file() -> str:
+    "Return path to the autzen 2010 las file"
+    return utils.test_data_filepath("autzen-bmx-2010.las").as_posix()
+
+
+@pytest.fixture
+def autzen_2023_file() -> str:
+    "Return path to the autzen 2023 las file"
+    return utils.test_data_filepath("autzen-bmx-2023.las").as_posix()

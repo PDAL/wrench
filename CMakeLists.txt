@@ -30,6 +30,7 @@ add_executable(pdal_wrench
     src/utils.cpp
     src/vpc.cpp
     src/height_above_ground.cpp
+    src/compare.cpp
 
     src/tile/tile.cpp
     src/tile/BufferCache.cpp
