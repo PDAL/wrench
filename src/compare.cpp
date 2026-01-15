@@ -165,8 +165,6 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::str
   
   Stage &writer = makeWriter(manager.get(), tile->outputFilename, filterM3c2);
 
-  pdal::PipelineWriter::writePipeline(&writer, "debug_compare_pipeline.json");
-
   return manager;
 }
 
