@@ -1,3 +1,4 @@
+import json
 import subprocess
 from pathlib import Path
 
@@ -106,3 +107,78 @@ def test_classify_ground(input_path: Path, output_path: Path, point_count: int):
     number_of_points = pipeline.execute()
 
     assert number_of_points == point_count
+
+
+def test_classify_ground_vpc_with_las_output_format():
+    input_path = utils.test_data_filepath("data.vpc")
+
+    vpc_las_output_path = utils.test_data_output_filepath("classify-ground-las.vpc", "classify_ground")
+
+    res = subprocess.run(
+        [
+            utils.pdal_wrench_path(),
+            "classify_ground",
+            f"--input={input_path.as_posix()}",
+            f"--output={vpc_las_output_path.as_posix()}",
+            "--vpc-output-format=las",
+        ],
+        check=True,
+    )
+
+    assert res.returncode == 0
+
+    output_subfolder = vpc_las_output_path.parent / vpc_las_output_path.stem
+
+    assert output_subfolder.exists()
+    assert all([x.suffix == ".las" for x in output_subfolder.iterdir()])
+
+
+def test_classify_ground_vpc_with_default_output_format():
+
+    input_path = utils.test_data_filepath("data.vpc")
+
+    vpc_copc_laz_output_path = utils.test_data_output_filepath("classify-ground-copc-laz.vpc", "classify_ground")
+
+    res = subprocess.run(
+        [
+            utils.pdal_wrench_path(),
+            "classify_ground",
+            f"--input={input_path.as_posix()}",
+            f"--output={vpc_copc_laz_output_path.as_posix()}",
+        ],
+        check=True,
+    )
+
+    assert res.returncode == 0
+
+    output_subfolder = vpc_copc_laz_output_path.parent / vpc_copc_laz_output_path.stem
+
+    assert output_subfolder.exists()
+    assert all([x.suffixes == [".copc", ".laz"] for x in output_subfolder.iterdir()])
+
+    # verify VPC content
+    vpc_content = json.loads(vpc_copc_laz_output_path.read_text())
+
+    # number of files in VPC
+    assert len(vpc_content["features"]) == 4
+
+    # check bbox of first and last file
+    first_file_bbox = vpc_content["features"][0]["bbox"]
+    assert first_file_bbox == [
+        -123.07031171500326,
+        44.05891131812414,
+        127.44,
+        -123.06893735490084,
+        44.05985282878156,
+        167.160,
+    ]
+
+    last_file_bbox = vpc_content["features"][3]["bbox"]
+    assert last_file_bbox == [
+        -123.06893723004889,
+        44.05792178151518,
+        126.65,
+        -123.06756285690368,
+        44.058912974549095,
+        160.16,
+    ]
