@@ -218,6 +218,15 @@ pdal_wrench height_above_ground --input=data.las --output=data_hag.las --algorit
 pdal_wrench height_above_ground --input=data.las --output=data_hag.las --algorithm=delaunay --replace-z=true --delaunay-count=10
 ```
 
+## compare
+
+Compares two point clouds using M3C2 algorithm and outputs a point cloud with new dimensions: m3c2_distance, m3c2_uncertainty, m3c2_significant, m3c2_std_dev1, m3c2_std_dev2, m3c2_count1 and m3c2_count2. The input data is subsampled to create set of core points, subsampling can be modified using subsampling-cell-size parameter, if it is set to 0.0, no subsampling is done and all points are used.
+
+```
+pdal_wrench compare --input=first.las --input-compare=second.las --output=changes.las --subsampling-cell-size=1.0 --normal-radius=2.0 --cyl-radius=2.0 --cyl-halflen=5.0 --reg-error=0.0 --cyl-orientation=up
+```
+
+
 # Virtual Point Clouds (VPC)
 
 This is similar to GDAL's VRT - a single file referring to other files that contain actual data. Software then may handle all data as a single dataset.
@@ -271,3 +280,4 @@ When algorithms create derived VPCs, by default they use uncompressed LAS, but `
 | height_above_ground | multi-threaded | per file |
 | filter_noise | multi-threaded | per file |
 | classify_ground | multi-threaded | per file |
+| compare | no | only available in PDAL Version > 2.10 |
