@@ -139,9 +139,17 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, std::str
   }
   Stage *reader2FilteredCropped = last;
 
-  pdal::Options sample_opts;
-  sample_opts.add(pdal::Option("cell", stepSample));
-  Stage *corePoints = &manager->makeFilter("filters.sample", *reader1FilteredCropped, sample_opts);
+  Stage *corePoints = nullptr;
+  if (subsamplingCellSize != 0.0)
+  {
+    pdal::Options sample_opts;
+    sample_opts.add(pdal::Option("cell", subsamplingCellSize));
+    corePoints = &manager->makeFilter("filters.sample", *reader1FilteredCropped, sample_opts);
+  }
+  else
+  {
+    corePoints = reader1FilteredCropped;
+  }
 
   Options compare_opts;
   compare_opts.add(pdal::Option("normal_radius", normalRadius));
