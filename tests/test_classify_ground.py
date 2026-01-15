@@ -1,3 +1,4 @@
+import json
 import subprocess
 from pathlib import Path
 
@@ -154,3 +155,30 @@ def test_classify_ground_vpc_with_default_output_format():
 
     assert output_subfolder.exists()
     assert all([x.suffixes == [".copc", ".laz"] for x in output_subfolder.iterdir()])
+
+    # verify VPC content
+    vpc_content = json.loads(vpc_copc_laz_output_path.read_text())
+
+    # number of files in VPC
+    assert len(vpc_content["features"]) == 4
+
+    # check bbox of first and last file
+    first_file_bbox = vpc_content["features"][0]["bbox"]
+    assert first_file_bbox == [
+        -123.07031171500326,
+        44.05891131812414,
+        127.44,
+        -123.06893735490084,
+        44.05985282878156,
+        167.160,
+    ]
+
+    last_file_bbox = vpc_content["features"][3]["bbox"]
+    assert last_file_bbox == [
+        -123.06893723004889,
+        44.05792178151518,
+        126.65,
+        -123.06756285690368,
+        44.058912974549095,
+        160.16,
+    ]
