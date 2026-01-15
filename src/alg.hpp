@@ -467,11 +467,6 @@ struct ComparePointClouds : public Alg
     pdal::Arg* argOutput = nullptr;
     pdal::Arg* argOutputFormat = nullptr;
     pdal::Arg* argComparedInputFile = nullptr;
-    pdal::Arg* argStepSample = nullptr;
-    pdal::Arg* argNormalRadius = nullptr;
-    pdal::Arg* argCylRadius = nullptr;
-    pdal::Arg* argCylHalflen = nullptr;
-    pdal::Arg* argRegError = nullptr;
     pdal::Arg* argOrientation = nullptr;
 
     // impl

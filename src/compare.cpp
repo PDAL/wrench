@@ -33,12 +33,12 @@ void ComparePointClouds::addArgs()
   argOutput = &programArgs.add("output,o", "Output point cloud file", outputFile);
   argComparedInputFile = &programArgs.add("input-compare", "Point cloud file to compare against input", comparedInputFile);
   
-  argStepSample = &programArgs.add("step-sample", "Minimum spacing between points", stepSample);
+  programArgs.add("subsampling-cell-size", "Minimum spacing between points", stepSample, 0.0);
 
-  argNormalRadius = &programArgs.add( "normal-radius", "Radius of the sphere around each core point that defines the neighbors from which normals are calculated.", normalRadius, 2.0);
-  argCylRadius = &programArgs.add("cyl-radius", "Radius of the cylinder inside of which points are searched for when calculating change", cylRadius, 2.0);
-  argCylHalflen = &programArgs.add("cyl-halflen", "The half-length of the cylinder of neighbors used for calculating change", cylHalflen, 5.0);
-  argRegError = &programArgs.add("reg-error", "Registration error", regError, 0.0);
+  programArgs.add( "normal-radius", "Radius of the sphere around each core point that defines the neighbors from which normals are calculated.", normalRadius, 2.0);
+  programArgs.add("cyl-radius", "Radius of the cylinder inside of which points are searched for when calculating change", cylRadius, 2.0);
+  programArgs.add("cyl-halflen", "The half-length of the cylinder of neighbors used for calculating change", cylHalflen, 5.0);
+  programArgs.add("reg-error", "Registration error", regError, 0.0);
   argOrientation = &programArgs.add( "cyl-orientation", "Which direction to orient the cylinder/normal vector used for comparison between the two point clouds. (up, origin, none)", cylOrientation, "up");
 }
 
