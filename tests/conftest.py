@@ -22,16 +22,15 @@ def _prepare_data():
         "https://media.githubusercontent.com/media/PDAL/data/refs/heads/main/autzen/stadium-utm.laz", base_data
     )
 
-    # TODO update the links once the PR is merged in PDAL repository
     autzen_2010_data = utils.test_data_filepath("autzen-bmx-2010.las")
     autzen_2023_data = utils.test_data_filepath("autzen-bmx-2023.las")
 
     utils.download_data(
-        "https://github.com/PDAL/PDAL/raw/b978473e87d0b015230f362a32c43a9a51307fac/test/data/autzen/autzen-bmx-2010.las",
+        "https://raw.githubusercontent.com/PDAL/PDAL/a057739ef0c620d4668752becef25f2b196bf174/test/data/autzen/autzen-bmx-2010.las",
         autzen_2010_data,
     )
     utils.download_data(
-        "https://github.com/PDAL/PDAL/raw/b978473e87d0b015230f362a32c43a9a51307fac/test/data/autzen/autzen-bmx-2023.las",
+        "https://raw.githubusercontent.com/PDAL/PDAL/a057739ef0c620d4668752becef25f2b196bf174/test/data/autzen/autzen-bmx-2023.las",
         autzen_2023_data,
     )
 
