@@ -73,12 +73,6 @@ bool ComparePointClouds::checkArgs()
     }
   }
 
-  if (!argStepSample->set())
-  {
-      std::cerr << "missing step for sampling mode" << std::endl;
-      return false;
-  }
-
   return true;
 }
 
