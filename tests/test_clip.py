@@ -49,6 +49,8 @@ def test_input_file_output_file(
         (utils.test_data_filepath("data.vpc"), utils.test_data_filepath("clipped-vpc.copc.laz")),
         (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("clipped-vpc-copc-files.vpc")),
         (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("clipped-vpc-copc-files.copc.laz")),
+        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("clipped-vpc-copc-files.vpc")),
+        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("clipped-vpc-copc-files.copc.laz")),
     ],
 )
 def test_clip_vpc(

@@ -13,6 +13,7 @@ import utils
         (utils.test_data_filepath("stadium-utm.laz"), utils.test_data_filepath("thin.copc.laz"), 138779),
         (utils.test_data_filepath("stadium-utm.copc.laz"), utils.test_data_filepath("thin-copc-input.laz"), 138779),
         (utils.test_data_filepath("data.vpc"), utils.test_data_filepath("thin-vpc.copc.laz"), 67634),
+        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("thin-vpc.copc.laz"), 67634),
     ],
 )
 def test_thin(input_path: Path, output_path: Path, point_count: int):

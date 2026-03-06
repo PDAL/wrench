@@ -1,5 +1,8 @@
 import subprocess
+import tempfile
 import typing
+import zipfile
+from pathlib import Path
 
 import pdal
 import pytest
@@ -121,6 +124,7 @@ def _prepare_data():
 
         assert clipped_copc_file_hag.exists()
 
+    # build vpc file with las files
     vpc_file = utils.test_data_filepath("data.vpc")
 
     if not vpc_file.exists():
@@ -144,6 +148,7 @@ def _prepare_data():
 
     assert number_points == 338163
 
+    # build vpc file with copc files
     vpc_copc_file = utils.test_data_filepath("data_copc.vpc")
 
     if not vpc_copc_file.exists():
@@ -167,6 +172,39 @@ def _prepare_data():
 
     assert number_points == 338163
 
+    # build vpz file with copc files
+    vpz_copc_file = utils.test_data_filepath("data_copc.vpz")
+
+    if not vpz_copc_file.exists():
+        res = subprocess.run(
+            [
+                utils.pdal_wrench_path(),
+                "build_vpc",
+                "--output",
+                vpz_copc_file.as_posix(),
+                *[f.as_posix() for f in files_for_vpc_copc],
+            ],
+            check=True,
+        )
+
+        assert res.returncode == 0
+
+    assert vpz_copc_file.exists()
+
+    assert zipfile.is_zipfile(vpz_copc_file.as_posix())
+
+    with zipfile.ZipFile(vpz_copc_file.as_posix()) as zf:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            zf.extractall(temp_dir)
+
+            assert (Path(temp_dir) / vpz_copc_file).exists()
+
+            vpc_copc = pdal.Reader(vpc_copc_file.as_posix()).pipeline()
+            number_points = vpc_copc.execute()
+
+            assert number_points == 338163
+
+    # build translated copc file
     base_copc_data = utils.test_data_filepath("stadium-utm.copc.laz")
 
     if not base_copc_data.exists():
