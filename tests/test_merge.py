@@ -46,10 +46,10 @@ def test_merge_to_file(output_path: Path, laz_files: typing.List[str]):
         ),
         (utils.test_data_filepath("data.vpc"), utils.test_data_output_filepath("merged-vpc.copc.laz", "merge")),
         (utils.test_data_filepath("data.vpc"), utils.test_data_output_filepath("merged-vpc.las", "merge")),
-        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_output_filepath("merged-copc-vpc.las", "merge")),
+        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_output_filepath("merged-copc-vpz.las", "merge")),
         (
             utils.test_data_filepath("data_copc.vpz"),
-            utils.test_data_output_filepath("merged-copc-vpc.copc.laz", "merge"),
+            utils.test_data_output_filepath("merged-copc-vpz.copc.laz", "merge"),
         ),
     ],
 )

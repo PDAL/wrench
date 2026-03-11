@@ -36,7 +36,7 @@ import utils
         ),
         (
             utils.test_data_filepath("data_copc.vpz"),
-            utils.test_data_output_filepath("translate.vpc", "translate"),
+            utils.test_data_output_filepath("translate-vpz.vpc", "translate"),
             338163,
         ),
     ],
@@ -95,7 +95,7 @@ def test_translate_files(input_path: Path, output_path: Path, point_count: int):
         ),
         (
             utils.test_data_filepath("data_copc.vpz"),
-            utils.test_data_output_filepath("translate-transform.vpc", "translate-transform"),
+            utils.test_data_output_filepath("translate-transform-vpz.vpc", "translate-transform"),
             338163,
         ),
     ],

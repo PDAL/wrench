@@ -11,8 +11,8 @@ import utils
         (utils.test_data_filepath("stadium-utm.laz"), utils.test_data_filepath("boundary-laz.gpkg")),
         (utils.test_data_filepath("stadium-utm.copc.laz"), utils.test_data_filepath("boundary_copc.gpkg")),
         (utils.test_data_filepath("data.vpc"), utils.test_data_filepath("boundary-vpc.gpkg")),
-        (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("boundary-vpc.gpkg")),
-        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("boundary-vpc.gpkg")),
+        (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("boundary-copc-vpc.gpkg")),
+        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("boundary-copc-vpz.gpkg")),
     ],
 )
 def test_boundary(input_path: Path, output_path: Path):
