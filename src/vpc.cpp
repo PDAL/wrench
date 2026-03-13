@@ -574,8 +574,8 @@ void buildVpc(std::vector<std::string> args)
     {
         const double totalW = totalBox.maxx - totalBox.minx;
         const double totalH = totalBox.maxy - totalBox.miny;
-        numOverviewX = std::max(1, static_cast<int>(std::ceil(totalW / overviewLength)));
-        numOverviewY = std::max(1, static_cast<int>(std::ceil(totalH / overviewLength)));
+        numOverviewX = (std::max)(1, static_cast<int>(std::ceil(totalW / overviewLength)));
+        numOverviewY = (std::max)(1, static_cast<int>(std::ceil(totalH / overviewLength)));
     }
 
     const int numOverviewTiles = numOverviewX * numOverviewY;
