@@ -13,6 +13,7 @@ ogr.UseExceptions()
     [
         (utils.test_data_filepath("stadium-utm.laz"), utils.test_data_filepath("points-laz.gpkg"), 693895),
         (utils.test_data_filepath("data.vpc"), utils.test_data_filepath("points-vpc.gpkg"), 338163),
+        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("points-vpz.gpkg"), 338163),
     ],
 )
 def test_to_vector(input_path: Path, gpkg_file: Path, point_count: int):

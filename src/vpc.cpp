@@ -26,6 +26,7 @@ namespace fs = std::filesystem;
 #include <pdal/util/ProgramArgs.hpp>
 
 #include "nlohmann/json.hpp"
+#include <zip.h>
 
 
 using json = nlohmann::json;
@@ -56,24 +57,87 @@ bool VirtualPointCloud::read(std::string filename)
 {
     clear();
 
-    std::ifstream inputJson(filename);
-    if (!inputJson.good())
-    {
-        std::cerr << "Failed to read input VPC file: " << filename << std::endl;
-        return false;
-    }
-
     fs::path filenameParent = fs::path(filename).parent_path();
 
     json data;
-    try
+
+    if (ends_with(filename, ".vpz"))
     {
-        data = json::parse(inputJson);
+        int err = 0;
+        zip_t *za = zip_open(filename.c_str(), ZIP_RDONLY, &err);
+        if (!za)
+        {
+            std::cerr << "Failed to open VPZ file: " << filename << std::endl;
+            return false;
+        }
+
+        // find the single .vpc entry
+        const zip_int64_t numEntries = zip_get_num_entries(za, 0);
+        zip_int64_t vpcIndex = -1;
+        for (zip_int64_t i = 0; i < numEntries; ++i)
+        {
+            const char *name = zip_get_name(za, i, 0);
+            if (name && ends_with(std::string(name), ".vpc"))
+            {
+                if (vpcIndex != -1)
+                {
+                    std::cerr << "VPZ file contains more than one .vpc entry: " << filename << std::endl;
+                    zip_close(za);
+                    return false;
+                }
+                vpcIndex = i;
+            }
+        }
+        if (vpcIndex == -1)
+        {
+            std::cerr << "VPZ file contains no .vpc entry: " << filename << std::endl;
+            zip_close(za);
+            return false;
+        }
+
+        zip_stat_t st;
+        zip_stat_index(za, vpcIndex, 0, &st);
+        zip_file_t *zf = zip_fopen_index(za, vpcIndex, 0);
+        if (!zf)
+        {
+            std::cerr << "Failed to open .vpc entry inside VPZ: " << filename << std::endl;
+            zip_close(za);
+            return false;
+        }
+
+        std::string content(st.size, '\0');
+        zip_fread(zf, &content[0], st.size);
+        zip_fclose(zf);
+        zip_close(za);
+
+        try
+        {
+            data = json::parse(content);
+        }
+        catch (std::exception &e)
+        {
+            std::cerr << "JSON parsing error: " << e.what() << std::endl;
+            return false;
+        }
     }
-    catch (std::exception &e)
+    else
     {
-        std::cerr << "JSON parsing error: " << e.what() << std::endl;
-        return false;
+        std::ifstream inputJson(filename);
+        if (!inputJson.good())
+        {
+            std::cerr << "Failed to read input VPC file: " << filename << std::endl;
+            return false;
+        }
+
+        try
+        {
+            data = json::parse(inputJson);
+        }
+        catch (std::exception &e)
+        {
+            std::cerr << "JSON parsing error: " << e.what() << std::endl;
+            return false;
+        }
     }
 
     if (data["type"] != "FeatureCollection")
@@ -209,17 +273,13 @@ void geometryToJson(const Geometry &geom, const BOX3D &bbox, nlohmann::json &jso
 
 bool VirtualPointCloud::write(std::string filename)
 {
+    if (!isVpcFilename(filename))
+        filename += ".vpz";
+
     std::string filenameAbsolute = filename;
     if (!fs::path(filename).is_absolute())
     {
         filenameAbsolute = fs::absolute(filename).string();
-    }
-
-    std::ofstream outputJson(filenameAbsolute);
-    if (!outputJson.good())
-    {
-        std::cerr << "Failed to create file: " << filenameAbsolute << std::endl;
-        return false;
     }
 
     fs::path outputPath = fs::path(filenameAbsolute).parent_path();
@@ -355,8 +415,53 @@ bool VirtualPointCloud::write(std::string filename)
 
     nlohmann::ordered_json j = { { "type", "FeatureCollection" }, { "features", jFiles } };
 
-    outputJson << std::setw(2) << j << std::endl;
-    outputJson.close();
+    if (ends_with(filenameAbsolute, ".vpz"))
+    {
+        const std::string content = j.dump() + "\n";
+        const std::string entryName = fs::path(filenameAbsolute).stem().string() + ".vpc";
+
+        int err = 0;
+        zip_t *za = zip_open(filenameAbsolute.c_str(), ZIP_CREATE | ZIP_TRUNCATE, &err);
+        if (!za)
+        {
+            std::cerr << "Failed to create VPZ file: " << filenameAbsolute << std::endl;
+            return false;
+        }
+
+        zip_source_t *source = zip_source_buffer(za, content.c_str(), content.size(), 0);
+        if (!source)
+        {
+            std::cerr << "Failed to create zip source buffer" << std::endl;
+            zip_discard(za);
+            return false;
+        }
+
+        if (zip_file_add(za, entryName.c_str(), source, ZIP_FL_OVERWRITE) < 0)
+        {
+            std::cerr << "Failed to add .vpc entry to VPZ: " << zip_strerror(za) << std::endl;
+            zip_source_free(source);
+            zip_discard(za);
+            return false;
+        }
+
+        if (zip_close(za) != 0)
+        {
+            std::cerr << "Failed to write VPZ file: " << filenameAbsolute << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        std::ofstream outputJson(filenameAbsolute);
+        if (!outputJson.good())
+        {
+            std::cerr << "Failed to create file: " << filenameAbsolute << std::endl;
+            return false;
+        }
+
+        outputJson << j << std::endl;
+        outputJson.close();
+    }
     return true;
 }
 
@@ -809,13 +914,7 @@ void buildVpc(std::vector<std::string> args)
         }
     }
 
-    //
-
-    vpc.dump();
-
     vpc.write(outputFile);
-
-    vpc.read(outputFile);
 
     // TODO: for now hoping that all files have the same file type + CRS + point format + scaling
     // "dataformat_id"

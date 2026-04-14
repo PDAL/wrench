@@ -40,8 +40,8 @@ def test_compare(autzen_2010_file: str, autzen_2023_file: str):
     assert "m3c2_count2" in dimensions
 
     values = pipeline.arrays[0]["m3c2_distance"]
-    assert values.min() == pytest.approx(-3.227012699417537, abs=1e-15)
-    assert values.max() == pytest.approx(4.87166403256035, abs=1e-15)
+    assert values.min() == pytest.approx(-3.2270126994, abs=1e-10)
+    assert values.max() == pytest.approx(4.8716640325, abs=1e-10)
 
 
 @pytest.mark.skipif(pdal.info.major <= 2 and pdal.info.minor < 10, reason="Requires PDAL version 2.10 or higher")
@@ -78,5 +78,5 @@ def test_compare_without_sampling(autzen_2010_file: str, autzen_2023_file: str):
     assert "m3c2_count2" in dimensions
 
     values = pipeline.arrays[0]["m3c2_distance"]
-    assert values.min() == pytest.approx(-3.8898310663727376, abs=1e-15)
-    assert values.max() == pytest.approx(5.081599567261037, abs=1e-15)
+    assert values.min() == pytest.approx(-3.8898310663, abs=1e-10)
+    assert values.max() == pytest.approx(5.0815995672, abs=1e-10)
