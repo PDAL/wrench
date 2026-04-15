@@ -60,11 +60,11 @@ Overviews are an optional feature, they do not need to be provided.
 
 In a simple case, there would be a single overview point cloud for a whole VPC - using thinned original data (e.g. every 1000-th point) and merged from individual data files to a single file.
 
-In case of very large point clouds, using a single overview point cloud may not be enough, and it may be useful to have a hierarchy of overviews with a tiling scheme (e.g.  1 overview at level 0, 4 overviews at level 1, 16 overviews at level 2 - each level having different density).
+In case of very large point clouds, using a single overview point cloud may be too large, and it may be useful to split it into multiple overviews using a tiling scheme.
 
 Overviews are defined as extra assets of STAC items in addition to the actual data file - it is expected that they have `overview` role defined. An overview point cloud may be referenced from multiple STAC items.
 
-In case of a hierarchy of overviews, each STAC item may have multiple overview assets linked (e.g. one for level 0, one for level 1, one for level 2). STAC protocol does not provide a way to distinguish which overview is at what level (no place to write spacing between points or density), it is up to the client software to collect all referenced overviews and query their properties.
+In case of tiled overviews, each STAC item may have multiple overview assets linked. All overviews that spatialy intersect the STAC item should be included. STAC protocol does not provide a way to list all linked overview tiles, it is up to the client software to collect all referenced overviews, deduplicate them and query their properties.
 
 A sample of encoding overview point cloud in addition to the actual data:
 ```json

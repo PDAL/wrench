@@ -148,7 +148,7 @@ def _prepare_data():
 
     assert number_points == 338163
 
-    # build vpc file with copc files
+    # build vpc file with copc files and tiled overviews
     vpc_copc_file = utils.test_data_filepath("data_copc.vpc")
 
     if not vpc_copc_file.exists():
@@ -156,6 +156,8 @@ def _prepare_data():
             [
                 utils.pdal_wrench_path(),
                 "build_vpc",
+                "--overview-length",
+                "150",
                 "--output",
                 vpc_copc_file.as_posix(),
                 *[f.as_posix() for f in files_for_vpc_copc],
@@ -171,6 +173,13 @@ def _prepare_data():
     number_points = vpc_copc.execute()
 
     assert number_points == 338163
+
+    assert not utils.test_data_filepath("data_copc-overview.copc.laz").exists()
+    assert utils.test_data_filepath("data_copc-overview-1.copc.laz").exists()
+    assert utils.test_data_filepath("data_copc-overview-2.copc.laz").exists()
+    assert utils.test_data_filepath("data_copc-overview-3.copc.laz").exists()
+    assert utils.test_data_filepath("data_copc-overview-4.copc.laz").exists()
+    assert not utils.test_data_filepath("data_copc-overview-5.copc.laz").exists()
 
     # build vpz file with copc files
     vpz_copc_file = utils.test_data_filepath("data_copc.vpz")
