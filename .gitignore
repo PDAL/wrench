@@ -3,7 +3,9 @@ CMakeLists.txt.user
 build-*/
 .vscode
 build
+/tests/__pycache__
 /tests/data/*.laz
 /tests/data/*.las
 /tests/data/*.vpc
+/tests/data/*.vpz
 /tests/data/output/**
