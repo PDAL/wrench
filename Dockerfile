@@ -15,6 +15,7 @@ RUN ash <<'EOF'
         cmake \
         g++ \
         git \
+        libzip-dev \
         make \
         pdal-dev \
     ;
