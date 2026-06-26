@@ -60,12 +60,14 @@ def test_clip_vpc(
 ):
     """Test clip vpc to different outputs function"""
 
+    input_data_path = input_path.as_posix() if isinstance(input_path, Path) else input_path
+
     res = subprocess.run(
         [
             utils.pdal_wrench_path(),
             "clip",
             f"--output={output_path.as_posix()}",
-            f"--input={input_path.as_posix()}",
+            f"--input={input_data_path}",
             f"--polygon={utils.test_data_filepath('rectangle.gpkg')}",
         ],
         check=True,
