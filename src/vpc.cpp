@@ -57,17 +57,22 @@ bool VirtualPointCloud::read(std::string filename)
 {
     clear();
 
-    fs::path filenameParent = fs::path(filename).parent_path();
-    
+    // this variable is necessary to resolve individual files relative to the VPC original location
+    std::string remoteBase;
     std::string downloadedFilename;
     if (pdal::Utils::isRemote(filename))
     {
         downloadedFilename = pdal::Utils::fetchRemote(filename);
+        size_t lastSlash = filename.rfind('/');
+        remoteBase = (lastSlash != std::string::npos)
+                         ? filename.substr(0, lastSlash + 1)
+                         : "";
     }
     // if downloaded file is not empty, use it as the filename to read, otherwise use the original filename
     filename = downloadedFilename.empty() ? filename : downloadedFilename;
 
-
+    fs::path filenameParent = fs::path(filename).parent_path();
+    
     json data;
 
     if (ends_with(filename, ".vpz"))
@@ -211,7 +216,14 @@ bool VirtualPointCloud::read(std::string filename)
 
             if (vpcf.filename.substr(0, 2) == "./")
             {
-                vpcf.filename = fs::weakly_canonical(filenameParent / vpcf.filename).string();
+                if (downloadedFilename.empty())
+                {
+                    vpcf.filename = fs::weakly_canonical(filenameParent / vpcf.filename).string();
+                }
+                else
+                {
+                    vpcf.filename = remoteBase + vpcf.filename.substr(2); 
+                }
             }
 
             for (auto &schemaItem : f["properties"]["pc:schemas"])
@@ -245,7 +257,16 @@ bool VirtualPointCloud::read(std::string filename)
 
                 std::string ovFilename = asset["href"];
                 if (ovFilename.substr(0, 2) == "./")
-                    ovFilename = fs::weakly_canonical(filenameParent / ovFilename).string();
+                {
+                    if (downloadedFilename.empty())
+                    {
+                        ovFilename = fs::weakly_canonical(filenameParent / ovFilename).string();
+                    }
+                    else
+                    {
+                        ovFilename = remoteBase + ovFilename.substr(2);
+                    }
+                }
                 vpcf.overviewFilenames.push_back(ovFilename);
             }
 
