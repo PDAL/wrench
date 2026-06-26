@@ -57,7 +57,8 @@ bool VirtualPointCloud::read(std::string filename)
 {
     clear();
 
-    std::string originalFilename = filename;
+    fs::path filenameParent = fs::path(filename).parent_path();
+    
     std::string downloadedFilename;
     if (pdal::Utils::isRemote(filename))
     {
@@ -66,7 +67,6 @@ bool VirtualPointCloud::read(std::string filename)
     // if downloaded file is not empty, use it as the filename to read, otherwise use the original filename
     filename = downloadedFilename.empty() ? filename : downloadedFilename;
 
-    fs::path filenameParent = fs::path(filename).parent_path();
 
     json data;
 
@@ -211,7 +211,6 @@ bool VirtualPointCloud::read(std::string filename)
 
             if (vpcf.filename.substr(0, 2) == "./")
             {
-                // resolve relative path
                 vpcf.filename = fs::weakly_canonical(filenameParent / vpcf.filename).string();
             }
 
