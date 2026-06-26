@@ -135,6 +135,8 @@ bool VirtualPointCloud::read(std::string filename)
         if (!inputJson.good())
         {
             std::cerr << "Failed to read input VPC file: " << filename << std::endl;
+            if (!downloadedFilename.empty())
+              fs::remove(downloadedFilename);
             return false;
         }
 
@@ -145,8 +147,13 @@ bool VirtualPointCloud::read(std::string filename)
         catch (std::exception &e)
         {
             std::cerr << "JSON parsing error: " << e.what() << std::endl;
+            if (!downloadedFilename.empty())
+                fs::remove(downloadedFilename);
             return false;
         }
+
+        if (!downloadedFilename.empty())
+            fs::remove(downloadedFilename);
     }
 
     if (data["type"] != "FeatureCollection")
