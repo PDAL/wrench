@@ -113,7 +113,7 @@ bool loadPolygons(const std::string &polygonFile, pdal::Options& crop_opts, BOX2
 }
 
 
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pdal::Options &crop_opts)
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pdal::Options &crop_opts, BOX2D combinedBox) 
 {
     assert(tile);
 
@@ -123,11 +123,16 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pd
 
     Stage *last = &r;
 
-    // filtering
-    if (!tile->filterBounds.empty())
+    // filtering - either use combinedBox from polygon and filterBounds
+    // or use it from polygon only if filterBounds is empty
+    if (combinedBox.valid())
     {
+        std::ostringstream oss;
+        oss << combinedBox;
+        std::string boundsBoxStr = oss.str();
+        
         Options filter_opts;
-        filter_opts.add(pdal::Option("bounds", tile->filterBounds));
+        filter_opts.add(pdal::Option("bounds", boundsBoxStr));
 
         if (readerSupportsBounds(r))
         {
@@ -213,7 +218,7 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
 
             tileOutputFiles.push_back(tile.outputFilename);
 
-            pipelines.push_back(pipeline(&tile, crop_opts));
+            pipelines.push_back(pipeline(&tile, crop_opts, combinedBounds));
         }
     }
     else
@@ -225,7 +230,7 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
         ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression, filterBounds);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
-        pipelines.push_back(pipeline(&tile, crop_opts));
+        pipelines.push_back(pipeline(&tile, crop_opts, combinedBounds));
     }
 }
 
