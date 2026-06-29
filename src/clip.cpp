@@ -162,6 +162,25 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
     if (!loadPolygons(polygonFile, crop_opts, bbox))
         return;
 
+    // equal combinedBounds to the polygon bounds
+    // it is never necessary to read more from the input than this 
+    combinedBounds = BOX2D(bbox); 
+    
+    // if filterBounds is set, combine it with the polygon bounds
+    if (!filterBounds.empty()) {
+       BOX2D filterBoundsBox;
+       std::string::size_type pos = 0;
+       filterBoundsBox.parse(filterBounds, pos);
+
+       // combinedBounds is the intersection of the polygon bounds and the filter bounds
+       combinedBounds.clip(filterBoundsBox); 
+    }
+
+    if (!combinedBounds.valid()) {
+      std::cerr << "clip bounds are empty or polygon and filter bounds do not overlap" << std::endl;
+      return;
+    }
+
     if (isVpcFilename(inputFile))
     {
         // for /tmp/hello.vpc we will use /tmp/hello dir for all results
