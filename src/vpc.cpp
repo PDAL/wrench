@@ -271,7 +271,7 @@ void geometryToJson(const Geometry &geom, const BOX3D &bbox, nlohmann::json &jso
     }
 }
 
-bool VirtualPointCloud::write(std::string filename)
+bool VirtualPointCloud::write(std::string filename, bool forceAbsolutePaths)
 {
     if (!isVpcFilename(filename))
         filename += ".vpz";
@@ -288,9 +288,9 @@ bool VirtualPointCloud::write(std::string filename)
     for ( const File &f : files )
     {
         std::string assetFilename;
-        if (pdal::Utils::isRemote(f.filename))
+        if (pdal::Utils::isRemote(f.filename) || forceAbsolutePaths)
         {
-            // keep remote URLs as they are
+            // keep remote URLs or absolute paths as they are
             assetFilename = f.filename;
         }
         else
@@ -379,7 +379,7 @@ bool VirtualPointCloud::write(std::string filename)
         for (size_t i = 0; i < f.overviewFilenames.size(); ++i)
         {
             std::string ovFilename(f.overviewFilenames[i]);
-            if (!pdal::Utils::isRemote(ovFilename))
+            if (!pdal::Utils::isRemote(ovFilename) && !forceAbsolutePaths)
             {
                 const fs::path fRelative = fs::relative(ovFilename, outputPath);
                 ovFilename = "./" + fRelative.string();
@@ -526,6 +526,7 @@ void buildVpc(std::vector<std::string> args)
     int max_threads = -1;
     bool verbose = false;
     bool help = false;
+    bool forceAbsolutePaths = false;
 
     ProgramArgs programArgs;
     programArgs.add("help,h", "Output command help.", help);
@@ -541,6 +542,7 @@ void buildVpc(std::vector<std::string> args)
 
     pdal::Arg& argThreads = programArgs.add("threads", "Max number of concurrent threads for parallel runs", max_threads);
     programArgs.add("verbose", "Print extra debugging output", verbose);
+    programArgs.add("use-absolute-paths", "Store absolute file paths instead of relative paths in the output VPC", forceAbsolutePaths);
 
     try
     {
@@ -914,7 +916,7 @@ void buildVpc(std::vector<std::string> args)
         }
     }
 
-    vpc.write(outputFile);
+    vpc.write(outputFile, forceAbsolutePaths);
 
     // TODO: for now hoping that all files have the same file type + CRS + point format + scaling
     // "dataformat_id"
