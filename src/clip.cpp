@@ -113,7 +113,7 @@ bool loadPolygons(const std::string &polygonFile, pdal::Options& crop_opts, BOX2
 }
 
 
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pdal::Options &crop_opts, BOX2D combinedBox) 
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pdal::Options &crop_opts) 
 {
     assert(tile);
 
@@ -125,16 +125,16 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pd
 
     // filtering - either use combinedBox from polygon and filterBounds
     // or use it from polygon only if filterBounds is empty
-    if (combinedBox.valid())
+    if (!tile->filterBounds.empty())
     {
         std::ostringstream oss;
-        oss << combinedBox;
+        oss << tile->filterBounds;
         std::string boundsBoxStr = oss.str();
-        
+
         Options filter_opts;
         filter_opts.add(pdal::Option("bounds", boundsBoxStr));
 
-        if (readerSupportsBounds(r))
+        if (readerSupportsBounds(r)) 
         {
             // Reader of the format can do the filtering - use that whenever possible!
             r.addOptions(filter_opts);
@@ -142,7 +142,7 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pd
         else
         {
             // Reader can't do the filtering - do it with a filter
-            last = &manager->makeFilter( "filters.crop", *last, filter_opts);
+            last = &manager->makeFilter("filters.crop", *last, filter_opts);
         }
     }
     if (!tile->filterExpression.empty())
@@ -167,21 +167,21 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
     if (!loadPolygons(polygonFile, crop_opts, bbox))
         return;
 
-    // equal combinedBounds to the polygon bounds
-    // it is never necessary to read more from the input than this 
-    combinedBounds = BOX2D(bbox); 
-    
+    // equal combinedBox to the polygon bounds
+    // it is never necessary to read more from the input than this
+    BOX2D combinedBox = BOX2D(bbox);
+
     // if filterBounds is set, combine it with the polygon bounds
     if (!filterBounds.empty()) {
        BOX2D filterBoundsBox;
        std::string::size_type pos = 0;
        filterBoundsBox.parse(filterBounds, pos);
 
-       // combinedBounds is the intersection of the polygon bounds and the filter bounds
-       combinedBounds.clip(filterBoundsBox); 
+       // combinedBox is the intersection of the polygon bounds and the filter bounds
+       combinedBox.clip(filterBoundsBox);
     }
 
-    if (!combinedBounds.valid()) {
+    if (!combinedBox.valid()) {
       std::cerr << "clip bounds are empty or polygon and filter bounds do not overlap" << std::endl;
       return;
     }
@@ -211,14 +211,14 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
               std::cout << "using " << f.filename << std::endl;
             }
 
-            ParallelJobInfo tile(ParallelJobInfo::FileBased, BOX2D(), filterExpression, filterBounds);
+            ParallelJobInfo tile(ParallelJobInfo::FileBased, combinedBox, filterExpression, filterBounds);
             tile.inputFilenames.push_back(f.filename);
 
             tile.outputFilename = tileOutputFileName(outputFile, outputFormatVpc, outputSubdir, f.filename);
 
             tileOutputFiles.push_back(tile.outputFilename);
 
-            pipelines.push_back(pipeline(&tile, crop_opts, combinedBounds));
+            pipelines.push_back(pipeline(&tile, crop_opts));
         }
     }
     else
@@ -227,10 +227,10 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
         {
             isStreaming = false;
         }
-        ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression, filterBounds);
+        ParallelJobInfo tile(ParallelJobInfo::Single, combinedBox, filterExpression, filterBounds);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
-        pipelines.push_back(pipeline(&tile, crop_opts, combinedBounds));
+        pipelines.push_back(pipeline(&tile, crop_opts));
     }
 }
 

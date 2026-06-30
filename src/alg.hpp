@@ -196,9 +196,6 @@ struct Clip : public Alg
 
     std::vector<std::string> tileOutputFiles;
 
-    // combined bounds of filterBounds and polygon file, can be empty if filteredBounds is empty
-    BOX2D combinedBounds; 
-
     // impl
     virtual void addArgs() override;
     virtual bool checkArgs() override;
