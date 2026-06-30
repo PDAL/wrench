@@ -56,10 +56,10 @@ void VirtualPointCloud::dump()
 bool VirtualPointCloud::read(std::string filename)
 {
     clear();
+    cleanup();
 
     // this variable is necessary to resolve individual files relative to the VPC original location
     std::string remoteBase;
-    std::string downloadedFilename;
     if (pdal::Utils::isRemote(filename))
     {
         downloadedFilename = pdal::Utils::fetchRemote(filename);
@@ -999,4 +999,15 @@ std::vector<VirtualPointCloud::File> VirtualPointCloud::overlappingBox2D(const B
             overlaps.push_back(f);
     }
     return overlaps;
+}
+
+VirtualPointCloud::~VirtualPointCloud() { cleanup(); }
+
+void VirtualPointCloud::cleanup() {
+  // remove the temporary local copy of a remote VPC, if one was downloaded
+  if (!downloadedFilename.empty()) {
+    std::error_code ec;
+    fs::remove(downloadedFilename, ec);
+    downloadedFilename.clear();
+  }
 }
