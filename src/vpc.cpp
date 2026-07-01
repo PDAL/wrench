@@ -297,6 +297,15 @@ bool VirtualPointCloud::write(std::string filename, bool forceAbsolutePaths)
         {
             // turn local paths to relative
             fs::path fRelative = fs::relative(f.filename, outputPath);
+
+            if (fRelative.empty()) {
+              std::cerr << "failed to make filename relative to output path: "
+                        << f.filename 
+                        << " consider using --use-absolute-paths"
+                        << std::endl;
+              return false;
+            }
+
             assetFilename = "./" + fRelative.string();
         }
         std::string fileId = fs::path(f.filename).stem().string();  // TODO: we should make sure the ID is unique
@@ -382,6 +391,16 @@ bool VirtualPointCloud::write(std::string filename, bool forceAbsolutePaths)
             if (!pdal::Utils::isRemote(ovFilename) && !forceAbsolutePaths)
             {
                 const fs::path fRelative = fs::relative(ovFilename, outputPath);
+                
+                if (fRelative.empty())
+                {
+                  std::cerr << "failed to make overview filename relative to output path: "
+                            << ovFilename
+                            << " consider using --use-absolute-paths"
+                            << std::endl;
+                  return false;
+                }
+
                 ovFilename = "./" + fRelative.string();
             }
             const std::string key = f.overviewFilenames.size() > 1 ? ("overview-" + std::to_string(i + 1)) : "overview";
