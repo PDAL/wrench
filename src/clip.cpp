@@ -113,7 +113,7 @@ bool loadPolygons(const std::string &polygonFile, pdal::Options& crop_opts, BOX2
 }
 
 
-static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pdal::Options &crop_opts) 
+static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pdal::Options &crop_opts)
 {
     assert(tile);
 
@@ -123,14 +123,13 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pd
 
     Stage *last = &r;
 
-    // filtering - either use combinedBox from polygon and filterBounds
-    // or use it from polygon only if filterBounds is empty
+    // filtering
     if (!tile->filterBounds.empty())
     {
         Options filter_opts;
         filter_opts.add(pdal::Option("bounds", tile->filterBounds));
 
-        if (readerSupportsBounds(r)) 
+        if (readerSupportsBounds(r))
         {
             // Reader of the format can do the filtering - use that whenever possible!
             r.addOptions(filter_opts);
