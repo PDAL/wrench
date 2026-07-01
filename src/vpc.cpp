@@ -271,7 +271,7 @@ void geometryToJson(const Geometry &geom, const BOX3D &bbox, nlohmann::json &jso
     }
 }
 
-bool VirtualPointCloud::write(std::string filename, bool forceAbsolutePaths)
+bool VirtualPointCloud::write(std::string filename)
 {
     if (!isVpcFilename(filename))
         filename += ".vpz";
@@ -948,7 +948,7 @@ void buildVpc(std::vector<std::string> args)
         }
     }
 
-    vpc.write(outputFile, forceAbsolutePaths);
+    vpc.write(outputFile);
 
     // TODO: for now hoping that all files have the same file type + CRS + point format + scaling
     // "dataformat_id"

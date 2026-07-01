@@ -75,7 +75,7 @@ struct VirtualPointCloud
     void clear();
     void dump();
     bool read(std::string filename);
-    bool write(std::string filename, bool forceAbsolutePaths = false);
+    bool write(std::string filename);
 
     point_count_t totalPoints() const;
     BOX3D box3d() const;
