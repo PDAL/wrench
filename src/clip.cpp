@@ -211,7 +211,7 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
               std::cout << "using " << f.filename << std::endl;
             }
 
-            ParallelJobInfo tile(ParallelJobInfo::FileBased, combinedBox, filterExpression, filterBounds);
+            ParallelJobInfo tile(ParallelJobInfo::FileBased, BOX2D() , filterExpression, combinedBox);
             tile.inputFilenames.push_back(f.filename);
 
             tile.outputFilename = tileOutputFileName(outputFile, outputFormatVpc, outputSubdir, f.filename);
@@ -227,7 +227,7 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
         {
             isStreaming = false;
         }
-        ParallelJobInfo tile(ParallelJobInfo::Single, combinedBox, filterExpression, filterBounds);
+        ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression, combinedBox);
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
         pipelines.push_back(pipeline(&tile, crop_opts));
