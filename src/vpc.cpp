@@ -327,7 +327,7 @@ bool VirtualPointCloud::write(std::string filename)
         forceAbsolutePaths = true;
         std::cerr << "Warning: failed to make filename relative to output path: "
                   << f.filename 
-                  << " using absolute paths in the output VPC file"
+                  << " ; using absolute paths in the output VPC file"
                   << std::endl;
         break;
       }
@@ -343,7 +343,7 @@ bool VirtualPointCloud::write(std::string filename)
                 forceAbsolutePaths = true;
                 std::cerr << "Warning: failed to make overview filename relative to output path: "
                         << ovFilename
-                        << " using absolute paths in the output VPC file"
+                        << " ; using absolute paths in the output VPC file"
                         << std::endl;
                 break;
             }
