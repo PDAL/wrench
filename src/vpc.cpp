@@ -558,7 +558,6 @@ void buildVpc(std::vector<std::string> args)
     int max_threads = -1;
     bool verbose = false;
     bool help = false;
-    bool forceAbsolutePaths = false;
 
     ProgramArgs programArgs;
     programArgs.add("help,h", "Output command help.", help);
