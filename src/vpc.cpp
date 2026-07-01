@@ -325,7 +325,7 @@ bool VirtualPointCloud::write(std::string filename)
       fs::path fRelative = fs::relative(f.filename, outputPath);
       if (fRelative.empty()) {
         forceAbsolutePaths = true;
-        std::cerr << "failed to make filename relative to output path: "
+        std::cerr << "Warning: failed to make filename relative to output path: "
                   << f.filename 
                   << " using absolute paths in the output VPC file"
                   << std::endl;
@@ -341,7 +341,7 @@ bool VirtualPointCloud::write(std::string filename)
             if (fRelative.empty()) 
             {
                 forceAbsolutePaths = true;
-                std::cerr << "failed to make overview filename relative to output path: "
+                std::cerr << "Warning: failed to make overview filename relative to output path: "
                         << ovFilename
                         << " using absolute paths in the output VPC file"
                         << std::endl;
