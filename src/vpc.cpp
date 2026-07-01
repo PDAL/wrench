@@ -285,7 +285,8 @@ bool VirtualPointCloud::write(std::string filename)
     fs::path outputPath = fs::path(filenameAbsolute).parent_path();
 
     bool forceAbsolutePaths = false;
-    for (const File &f : files) {
+    for (const File &f : files) 
+    {
       fs::path fRelative = fs::relative(f.filename, outputPath);
       if (fRelative.empty()) {
         forceAbsolutePaths = true;
@@ -294,6 +295,24 @@ bool VirtualPointCloud::write(std::string filename)
                   << " using absolute paths in the output VPC file"
                   << std::endl;
         break;
+      }
+
+      for (size_t i = 0; i < f.overviewFilenames.size(); ++i)
+      {
+        std::string ovFilename(f.overviewFilenames[i]);
+        if (!pdal::Utils::isRemote(ovFilename)) 
+        {
+            const fs::path fRelative = fs::relative(ovFilename, outputPath);
+            if (fRelative.empty()) 
+            {
+                forceAbsolutePaths = true;
+                std::cerr << "failed to make overview filename relative to output path: "
+                        << ovFilename
+                        << " using absolute paths in the output VPC file"
+                        << std::endl;
+                break;
+            }
+        }
       }
     }
 
@@ -310,15 +329,6 @@ bool VirtualPointCloud::write(std::string filename)
         {
             // turn local paths to relative
             fs::path fRelative = fs::relative(f.filename, outputPath);
-
-            if (fRelative.empty()) {
-              std::cerr << "failed to make filename relative to output path: "
-                        << f.filename 
-                        << " consider using --use-absolute-paths"
-                        << std::endl;
-              return false;
-            }
-
             assetFilename = "./" + fRelative.string();
         }
         std::string fileId = fs::path(f.filename).stem().string();  // TODO: we should make sure the ID is unique
@@ -404,16 +414,6 @@ bool VirtualPointCloud::write(std::string filename)
             if (!pdal::Utils::isRemote(ovFilename) && !forceAbsolutePaths)
             {
                 const fs::path fRelative = fs::relative(ovFilename, outputPath);
-                
-                if (fRelative.empty())
-                {
-                  std::cerr << "failed to make overview filename relative to output path: "
-                            << ovFilename
-                            << " consider using --use-absolute-paths"
-                            << std::endl;
-                  return false;
-                }
-
                 ovFilename = "./" + fRelative.string();
             }
             const std::string key = f.overviewFilenames.size() > 1 ? ("overview-" + std::to_string(i + 1)) : "overview";
