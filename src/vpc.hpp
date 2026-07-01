@@ -75,9 +75,6 @@ struct VirtualPointCloud
     std::string crsWkt;  // valid WKT for CRS of all files (or empty string if undefined, or "_mix_" if a mixture of CRS was seen)
     std::string downloadedFilename;  // local copy of a remote VPC fetched in read()
 
-    //! removes the temporary local copy of a remote VPC, if one was downloaded
-    void cleanup();
-
     void clear();
     void dump();
     bool read(std::string filename);

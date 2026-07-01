@@ -40,6 +40,13 @@ using namespace pdal;
 void VirtualPointCloud::clear()
 {
     files.clear();
+
+    // remove the temporary local copy of a remote VPC, if one was downloaded
+    if (!downloadedFilename.empty()) {
+      std::error_code ec;
+      fs::remove(downloadedFilename, ec);
+      downloadedFilename.clear();
+    }
 }
 
 void VirtualPointCloud::dump()
@@ -994,13 +1001,4 @@ std::vector<VirtualPointCloud::File> VirtualPointCloud::overlappingBox2D(const B
     return overlaps;
 }
 
-VirtualPointCloud::~VirtualPointCloud() { cleanup(); }
-
-void VirtualPointCloud::cleanup() {
-  // remove the temporary local copy of a remote VPC, if one was downloaded
-  if (!downloadedFilename.empty()) {
-    std::error_code ec;
-    fs::remove(downloadedFilename, ec);
-    downloadedFilename.clear();
-  }
-}
+VirtualPointCloud::~VirtualPointCloud() { clear(); }
