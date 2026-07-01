@@ -63,7 +63,6 @@ void VirtualPointCloud::dump()
 bool VirtualPointCloud::read(std::string filename)
 {
     clear();
-    cleanup();
 
     // this variable is necessary to resolve individual files relative to the VPC original location
     std::string remoteBase;
