@@ -127,12 +127,8 @@ static std::unique_ptr<PipelineManager> pipeline(ParallelJobInfo *tile, const pd
     // or use it from polygon only if filterBounds is empty
     if (!tile->filterBounds.empty())
     {
-        std::ostringstream oss;
-        oss << tile->filterBounds;
-        std::string boundsBoxStr = oss.str();
-
         Options filter_opts;
-        filter_opts.add(pdal::Option("bounds", boundsBoxStr));
+        filter_opts.add(pdal::Option("bounds", tile->filterBounds));
 
         if (readerSupportsBounds(r)) 
         {
@@ -211,7 +207,7 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
               std::cout << "using " << f.filename << std::endl;
             }
 
-            ParallelJobInfo tile(ParallelJobInfo::FileBased, BOX2D() , filterExpression, combinedBox);
+            ParallelJobInfo tile(ParallelJobInfo::FileBased, BOX2D(), filterExpression, box_to_pdal_bounds(combinedBox));
             tile.inputFilenames.push_back(f.filename);
 
             tile.outputFilename = tileOutputFileName(outputFile, outputFormatVpc, outputSubdir, f.filename);
@@ -227,7 +223,7 @@ void Clip::preparePipelines(std::vector<std::unique_ptr<PipelineManager>>& pipel
         {
             isStreaming = false;
         }
-        ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression, combinedBox);
+        ParallelJobInfo tile(ParallelJobInfo::Single, BOX2D(), filterExpression, box_to_pdal_bounds(combinedBox));
         tile.inputFilenames.push_back(inputFile);
         tile.outputFilename = outputFile;
         pipelines.push_back(pipeline(&tile, crop_opts));
