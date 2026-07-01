@@ -574,7 +574,6 @@ void buildVpc(std::vector<std::string> args)
 
     pdal::Arg& argThreads = programArgs.add("threads", "Max number of concurrent threads for parallel runs", max_threads);
     programArgs.add("verbose", "Print extra debugging output", verbose);
-    programArgs.add("use-absolute-paths", "Store absolute file paths instead of relative paths in the output VPC", forceAbsolutePaths);
 
     try
     {
