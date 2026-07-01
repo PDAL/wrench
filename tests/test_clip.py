@@ -51,7 +51,7 @@ def test_input_file_output_file(
         (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("clipped-vpc-copc-files.copc.laz"), 66911),
         (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("clipped-vpz-copc-files.vpc"), 66911),
         (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("clipped-vpz-copc-files.copc.laz"), 66911),
-        ("https://raw.githubusercontent.com/PDAL/wrench/refs/heads/fix-remote-vpc/tests/data/stadium.vpc", utils.test_data_filepath("clipped-vpz-copc-files.copc.laz"), 66905),
+        ("https://raw.githubusercontent.com/PDAL/wrench/f4b156c5081dd9a1d44fccfdb67f2c36e91e3566/tests/data/stadium.vpc", utils.test_data_filepath("clipped-vpz-copc-files.copc.laz"), 66905),
     ],
 )
 def test_clip_vpc(
