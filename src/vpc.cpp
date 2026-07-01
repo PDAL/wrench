@@ -284,6 +284,19 @@ bool VirtualPointCloud::write(std::string filename, bool forceAbsolutePaths)
 
     fs::path outputPath = fs::path(filenameAbsolute).parent_path();
 
+    bool forceAbsolutePaths = false;
+    for (const File &f : files) {
+      fs::path fRelative = fs::relative(f.filename, outputPath);
+      if (fRelative.empty()) {
+        forceAbsolutePaths = true;
+        std::cerr << "failed to make filename relative to output path: "
+                  << f.filename 
+                  << " using absolute paths in the output VPC file"
+                  << std::endl;
+        break;
+      }
+    }
+
     std::vector<nlohmann::ordered_json> jFiles;
     for ( const File &f : files )
     {
