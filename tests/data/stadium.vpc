@@ -1,0 +1,212 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "stac_version": "1.0.0",
+      "stac_extensions": [
+        "https://stac-extensions.github.io/pointcloud/v1.0.0/schema.json",
+        "https://stac-extensions.github.io/projection/v1.1.0/schema.json"
+      ],
+      "id": "stadium-utm",
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              -123.07030806277363,
+              44.0567662598593,
+              126.64
+            ],
+            [
+              -123.07031177383075,
+              44.05990169102702,
+              126.64
+            ],
+            [
+              -123.06654779900845,
+              44.059903944303535,
+              182.32
+            ],
+            [
+              -123.06654428658233,
+              44.05676851281813,
+              182.32
+            ],
+            [
+              -123.07030806277363,
+              44.0567662598593,
+              126.64
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "bbox": [
+        -123.07031177383075,
+        44.0567662598593,
+        126.64,
+        -123.06654428658233,
+        44.059903944303535,
+        182.32
+      ],
+      "properties": {
+        "datetime": "2013-07-17T00:00:00Z",
+        "pc:count": 693895,
+        "pc:encoding": "?",
+        "pc:schemas": [
+          {
+            "name": "X",
+            "size": 8,
+            "type": "floating"
+          },
+          {
+            "name": "Y",
+            "size": 8,
+            "type": "floating"
+          },
+          {
+            "name": "Z",
+            "size": 8,
+            "type": "floating"
+          },
+          {
+            "name": "Intensity",
+            "size": 2,
+            "type": "unsigned"
+          },
+          {
+            "name": "ReturnNumber",
+            "size": 1,
+            "type": "unsigned"
+          },
+          {
+            "name": "NumberOfReturns",
+            "size": 1,
+            "type": "unsigned"
+          },
+          {
+            "name": "ScanDirectionFlag",
+            "size": 1,
+            "type": "unsigned"
+          },
+          {
+            "name": "EdgeOfFlightLine",
+            "size": 1,
+            "type": "unsigned"
+          },
+          {
+            "name": "Classification",
+            "size": 1,
+            "type": "unsigned"
+          },
+          {
+            "name": "Synthetic",
+            "size": 1,
+            "type": "unsigned"
+          },
+          {
+            "name": "KeyPoint",
+            "size": 1,
+            "type": "unsigned"
+          },
+          {
+            "name": "Withheld",
+            "size": 1,
+            "type": "unsigned"
+          },
+          {
+            "name": "Overlap",
+            "size": 1,
+            "type": "unsigned"
+          },
+          {
+            "name": "ScanAngleRank",
+            "size": 4,
+            "type": "floating"
+          },
+          {
+            "name": "UserData",
+            "size": 1,
+            "type": "unsigned"
+          },
+          {
+            "name": "PointSourceId",
+            "size": 2,
+            "type": "unsigned"
+          },
+          {
+            "name": "GpsTime",
+            "size": 8,
+            "type": "floating"
+          },
+          {
+            "name": "Red",
+            "size": 2,
+            "type": "unsigned"
+          },
+          {
+            "name": "Green",
+            "size": 2,
+            "type": "unsigned"
+          },
+          {
+            "name": "Blue",
+            "size": 2,
+            "type": "unsigned"
+          }
+        ],
+        "pc:type": "lidar",
+        "proj:bbox": [
+          494367.91,
+          4878180.65,
+          126.64,
+          494669.38,
+          4878528.9,
+          182.32
+        ],
+        "proj:geometry": {
+          "coordinates": [
+            [
+              [
+                494367.91,
+                4878180.65,
+                126.64
+              ],
+              [
+                494367.91,
+                4878528.9,
+                126.64
+              ],
+              [
+                494669.38,
+                4878528.9,
+                182.32
+              ],
+              [
+                494669.38,
+                4878180.65,
+                182.32
+              ],
+              [
+                494367.91,
+                4878180.65,
+                126.64
+              ]
+            ]
+          ],
+          "type": "Polygon"
+        },
+        "proj:wkt2": "PROJCS[\"NAD83 / UTM zone 10N\",GEOGCS[\"NAD83\",DATUM[\"North_American_Datum_1983\",SPHEROID[\"GRS 1980\",6378137,298.257222101,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"6269\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4269\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-123],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"26910\"]]"
+      },
+      "links": [],
+      "assets": {
+        "data": {
+          "href": "https://media.githubusercontent.com/media/PDAL/data/refs/heads/main/autzen/stadium-utm.laz",
+          "roles": [
+            "data"
+          ]
+        }
+      }
+    }
+  ]
+}

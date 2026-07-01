@@ -44,27 +44,31 @@ def test_input_file_output_file(
 
 
 @pytest.mark.parametrize(
-    "input_path,output_path",
+    "input_path,output_path,points",
     [
-        (utils.test_data_filepath("data.vpc"), utils.test_data_filepath("clipped-vpc.copc.laz")),
-        (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("clipped-vpc-copc-files.vpc")),
-        (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("clipped-vpc-copc-files.copc.laz")),
-        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("clipped-vpz-copc-files.vpc")),
-        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("clipped-vpz-copc-files.copc.laz")),
+        (utils.test_data_filepath("data.vpc"), utils.test_data_filepath("clipped-vpc.copc.laz"), 66911),
+        (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("clipped-vpc-copc-files.vpc"), 66911),
+        (utils.test_data_filepath("data_copc.vpc"), utils.test_data_filepath("clipped-vpc-copc-files.copc.laz"), 66911),
+        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("clipped-vpz-copc-files.vpc"), 66911),
+        (utils.test_data_filepath("data_copc.vpz"), utils.test_data_filepath("clipped-vpz-copc-files.copc.laz"), 66911),
+        ("https://raw.githubusercontent.com/PDAL/wrench/f4b156c5081dd9a1d44fccfdb67f2c36e91e3566/tests/data/stadium.vpc", utils.test_data_filepath("clipped-vpz-copc-files.copc.laz"), 66905),
     ],
 )
 def test_clip_vpc(
     input_path: Path,
     output_path: Path,
+    points: int,
 ):
     """Test clip vpc to different outputs function"""
+
+    input_data_path = input_path.as_posix() if isinstance(input_path, Path) else input_path
 
     res = subprocess.run(
         [
             utils.pdal_wrench_path(),
             "clip",
             f"--output={output_path.as_posix()}",
-            f"--input={input_path.as_posix()}",
+            f"--input={input_data_path}",
             f"--polygon={utils.test_data_filepath('rectangle.gpkg')}",
         ],
         check=True,
@@ -78,4 +82,4 @@ def test_clip_vpc(
 
     number_of_points = pipeline.execute()
 
-    assert number_of_points == 66911
+    assert number_of_points == points
